@@ -1,0 +1,30 @@
+[package]
+name = "rdnsx-core"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+documentation.workspace = true
+keywords.workspace = true
+categories.workspace = true
+description = "Core DNS toolkit library for fast and efficient DNS resolution"
+
+[dependencies]
+# Workspace dependencies
+tokio = { workspace = true }
+hickory-resolver = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }
+dashmap = { workspace = true }
+futures = { workspace = true }
+regex = { workspace = true }
+ipnetwork = { workspace = true }
+chrono = { workspace = true }
+elasticsearch = { workspace = true }
+mongodb = { workspace = true }
+async-trait = "0.1"
+rand = "0.8"
