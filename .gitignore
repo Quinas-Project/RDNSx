@@ -23,3 +23,4 @@ Thumbs.db
 *.exe
 target/
 .DS_Store
+.cursor/
