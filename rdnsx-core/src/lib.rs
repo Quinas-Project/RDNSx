@@ -20,7 +20,7 @@ pub use client::DnsxClient;
 pub use config::{DnsxOptions, ExportConfig};
 pub use error::{DnsxError, Result};
 pub use types::{DnsRecord, RecordType, ResponseCode, RecordValue};
-pub use export::{Exporter, ElasticsearchExporter, MongodbExporter};
+pub use export::{Exporter, CassandraExporter, ElasticsearchExporter, MongodbExporter};
 pub use bruteforce::Bruteforcer;
 pub use wildcard::WildcardFilter;
 pub use resolver::ResolverPool;

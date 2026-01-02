@@ -5,7 +5,7 @@ use std::sync::Arc;
 use anyhow::Result;
 use clap::Args;
 use rdnsx_core::{DnsxClient, RecordType, ResponseCode};
-use rdnsx_core::export::{elasticsearch::ElasticsearchExporter, mongodb::MongodbExporter};
+use rdnsx_core::export::{cassandra::CassandraExporter, elasticsearch::ElasticsearchExporter, mongodb::MongodbExporter};
 use rdnsx_core::resolver::ResolverPool;
 use rdnsx_core::wildcard::WildcardFilter;
 
@@ -54,6 +54,78 @@ pub struct QueryArgs {
     #[arg(long)]
     pub srv: bool,
 
+    /// CAA records
+    #[arg(long)]
+    pub caa: bool,
+
+    /// CERT records
+    #[arg(long)]
+    pub cert: bool,
+
+    /// DNAME records
+    #[arg(long)]
+    pub dname: bool,
+
+    /// DNSKEY records
+    #[arg(long)]
+    pub dnskey: bool,
+
+    /// DS records
+    #[arg(long)]
+    pub ds: bool,
+
+    /// HINFO records
+    #[arg(long)]
+    pub hinfo: bool,
+
+    /// HTTPS records
+    #[arg(long)]
+    pub https: bool,
+
+    /// KEY records
+    #[arg(long)]
+    pub key: bool,
+
+    /// LOC records
+    #[arg(long)]
+    pub loc: bool,
+
+    /// NAPTR records
+    #[arg(long)]
+    pub naptr: bool,
+
+    /// NSEC records
+    #[arg(long)]
+    pub nsec: bool,
+
+    /// NSEC3 records
+    #[arg(long)]
+    pub nsec3: bool,
+
+    /// OPT records
+    #[arg(long)]
+    pub opt: bool,
+
+    /// RRSIG records
+    #[arg(long)]
+    pub rrsig: bool,
+
+    /// SSHFP records
+    #[arg(long)]
+    pub sshfp: bool,
+
+    /// SVCB records
+    #[arg(long)]
+    pub svcb: bool,
+
+    /// TLSA records
+    #[arg(long)]
+    pub tlsa: bool,
+
+    /// URI records
+    #[arg(long)]
+    pub uri: bool,
+
     /// ASN information
     #[arg(long)]
     pub asn: bool,
@@ -99,6 +171,7 @@ pub async fn run(args: QueryArgs, config: Config) -> Result<()> {
     // Create exporters if configured
     let mut es_exporter: Option<ElasticsearchExporter> = None;
     let mut mongo_exporter: Option<MongodbExporter> = None;
+    let mut cassandra_exporter: Option<CassandraExporter> = None;
 
     if let Some(es_url) = &config.export_config.elasticsearch_url {
         es_exporter = Some(
@@ -122,6 +195,21 @@ pub async fn run(args: QueryArgs, config: Config) -> Result<()> {
             )
             .await
             .map_err(|e| anyhow::anyhow!("Failed to create MongoDB exporter: {}", e))?,
+        );
+    }
+
+    if let Some(contact_points) = &config.export_config.cassandra_contact_points {
+        cassandra_exporter = Some(
+            CassandraExporter::new(
+                contact_points,
+                config.export_config.cassandra_username.as_deref(),
+                config.export_config.cassandra_password.as_deref(),
+                &config.export_config.cassandra_keyspace,
+                &config.export_config.cassandra_table,
+                config.export_config.batch_size,
+            )
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to create Cassandra exporter: {}", e))?,
         );
     }
 
@@ -172,6 +260,15 @@ pub async fn run(args: QueryArgs, config: Config) -> Result<()> {
                                 }
                             }
                         }
+
+                        // Export to Cassandra if configured
+                        if let Some(ref exporter) = cassandra_exporter {
+                            if let Err(e) = exporter.export(record.clone()).await {
+                                if !config.silent {
+                                    eprintln!("Warning: Failed to export to Cassandra: {}", e);
+                                }
+                            }
+                        }
                     }
                 }
                 Err(e) => {
@@ -189,6 +286,9 @@ pub async fn run(args: QueryArgs, config: Config) -> Result<()> {
     }
     if let Some(ref exporter) = mongo_exporter {
         exporter.flush().await.map_err(|e| anyhow::anyhow!("Failed to flush MongoDB: {}", e))?;
+    }
+    if let Some(ref exporter) = cassandra_exporter {
+        exporter.flush().await.map_err(|e| anyhow::anyhow!("Failed to flush Cassandra: {}", e))?;
     }
 
     output.flush()?;
@@ -221,6 +321,60 @@ fn determine_record_types(args: &QueryArgs) -> Vec<RecordType> {
     }
     if args.srv {
         types.push(RecordType::Srv);
+    }
+    if args.caa {
+        types.push(RecordType::Caa);
+    }
+    if args.cert {
+        types.push(RecordType::Cert);
+    }
+    if args.dname {
+        types.push(RecordType::Dname);
+    }
+    if args.dnskey {
+        types.push(RecordType::Dnskey);
+    }
+    if args.ds {
+        types.push(RecordType::Ds);
+    }
+    if args.hinfo {
+        types.push(RecordType::Hinfo);
+    }
+    if args.https {
+        types.push(RecordType::Https);
+    }
+    if args.key {
+        types.push(RecordType::Key);
+    }
+    if args.loc {
+        types.push(RecordType::Loc);
+    }
+    if args.naptr {
+        types.push(RecordType::Naptr);
+    }
+    if args.nsec {
+        types.push(RecordType::Nsec);
+    }
+    if args.nsec3 {
+        types.push(RecordType::Nsec3);
+    }
+    if args.opt {
+        types.push(RecordType::Opt);
+    }
+    if args.rrsig {
+        types.push(RecordType::Rrsig);
+    }
+    if args.sshfp {
+        types.push(RecordType::Sshfp);
+    }
+    if args.svcb {
+        types.push(RecordType::Svcb);
+    }
+    if args.tlsa {
+        types.push(RecordType::Tlsa);
+    }
+    if args.uri {
+        types.push(RecordType::Uri);
     }
 
     // Default to A if no specific types requested

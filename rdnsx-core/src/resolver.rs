@@ -13,7 +13,7 @@ use tracing::{debug, trace, warn};
 
 use crate::config::DnsxOptions;
 use crate::error::{DnsxError, Result};
-use crate::utils::parse_resolver;
+use crate::utils;
 
 /// DNS resolver pool
 pub struct ResolverPool {
@@ -45,7 +45,7 @@ impl ResolverPool {
         // Parse and validate resolvers
         let mut resolver_configs = Vec::new();
         for resolver_str in &resolvers {
-            let addr = parse_resolver(resolver_str)?;
+            let addr = utils::parse_resolver(resolver_str)?;
             resolver_configs.push(addr);
         }
 

@@ -66,6 +66,26 @@ pub struct Cli {
     #[arg(long, global = true, default_value = "records")]
     pub mongodb_collection: String,
 
+    /// Cassandra contact points (comma-separated)
+    #[arg(long, global = true)]
+    pub cassandra: Option<String>,
+
+    /// Cassandra username
+    #[arg(long, global = true)]
+    pub cassandra_username: Option<String>,
+
+    /// Cassandra password
+    #[arg(long, global = true)]
+    pub cassandra_password: Option<String>,
+
+    /// Cassandra keyspace name
+    #[arg(long, global = true, default_value = "dnsx")]
+    pub cassandra_keyspace: String,
+
+    /// Cassandra table name
+    #[arg(long, global = true, default_value = "records")]
+    pub cassandra_table: String,
+
     /// Batch size for database exports
     #[arg(long, global = true, default_value_t = 1000)]
     pub export_batch_size: usize,

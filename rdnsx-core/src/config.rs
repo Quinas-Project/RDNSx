@@ -99,6 +99,16 @@ pub struct ExportConfig {
     pub mongodb_database: String,
     /// MongoDB collection name
     pub mongodb_collection: String,
+    /// Cassandra contact points (optional)
+    pub cassandra_contact_points: Option<Vec<String>>,
+    /// Cassandra username (optional)
+    pub cassandra_username: Option<String>,
+    /// Cassandra password (optional)
+    pub cassandra_password: Option<String>,
+    /// Cassandra keyspace name
+    pub cassandra_keyspace: String,
+    /// Cassandra table name
+    pub cassandra_table: String,
     /// Batch size for exports
     pub batch_size: usize,
 }
@@ -111,6 +121,11 @@ impl Default for ExportConfig {
             mongodb_url: None,
             mongodb_database: "dnsx".to_string(),
             mongodb_collection: "records".to_string(),
+            cassandra_contact_points: None,
+            cassandra_username: None,
+            cassandra_password: None,
+            cassandra_keyspace: "dnsx".to_string(),
+            cassandra_table: "records".to_string(),
             batch_size: DEFAULT_EXPORT_BATCH_SIZE,
         }
     }

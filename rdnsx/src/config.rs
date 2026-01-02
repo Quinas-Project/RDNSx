@@ -45,12 +45,22 @@ impl Config {
             .with_concurrency(cli.threads)
             .with_rate_limit(cli.rate_limit);
 
+        // Parse Cassandra contact points
+        let cassandra_contact_points = cli.cassandra.as_ref().map(|points| {
+            points.split(',').map(|s| s.trim().to_string()).collect::<Vec<String>>()
+        });
+
         let export_config = ExportConfig {
             elasticsearch_url: cli.elasticsearch.clone(),
             elasticsearch_index: cli.elasticsearch_index.clone(),
             mongodb_url: cli.mongodb.clone(),
             mongodb_database: cli.mongodb_database.clone(),
             mongodb_collection: cli.mongodb_collection.clone(),
+            cassandra_contact_points,
+            cassandra_username: cli.cassandra_username.clone(),
+            cassandra_password: cli.cassandra_password.clone(),
+            cassandra_keyspace: cli.cassandra_keyspace.clone(),
+            cassandra_table: cli.cassandra_table.clone(),
             batch_size: cli.export_batch_size,
         };
 

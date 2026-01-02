@@ -26,5 +26,6 @@ ipnetwork = { workspace = true }
 chrono = { workspace = true }
 elasticsearch = { workspace = true }
 mongodb = { workspace = true }
+scylla = { workspace = true }
 async-trait = "0.1"
 rand = "0.8"

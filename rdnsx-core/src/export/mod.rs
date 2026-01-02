@@ -1,8 +1,10 @@
 //! Database export modules
 
+pub mod cassandra;
 pub mod elasticsearch;
 pub mod mongodb;
 
+pub use cassandra::CassandraExporter;
 pub use elasticsearch::ElasticsearchExporter;
 pub use mongodb::MongodbExporter;
 

@@ -29,6 +29,42 @@ pub enum RecordType {
     Srv,
     /// AFSDB record
     Afsdb,
+    /// CAA record (Certification Authority Authorization)
+    Caa,
+    /// CERT record (certificate)
+    Cert,
+    /// DNAME record (delegation name)
+    Dname,
+    /// DNSKEY record (DNSSEC key)
+    Dnskey,
+    /// DS record (delegation signer)
+    Ds,
+    /// HINFO record (host information)
+    Hinfo,
+    /// HTTPS record
+    Https,
+    /// KEY record
+    Key,
+    /// LOC record (location)
+    Loc,
+    /// NAPTR record (naming authority pointer)
+    Naptr,
+    /// NSEC record (DNSSEC)
+    Nsec,
+    /// NSEC3 record (DNSSEC)
+    Nsec3,
+    /// OPT record (EDNS options)
+    Opt,
+    /// RRSIG record (DNSSEC signature)
+    Rrsig,
+    /// SSHFP record (SSH fingerprint)
+    Sshfp,
+    /// SVCB record (service binding)
+    Svcb,
+    /// TLSA record (TLSA certificate association)
+    Tlsa,
+    /// URI record (uniform resource identifier)
+    Uri,
 }
 
 impl RecordType {
@@ -45,6 +81,24 @@ impl RecordType {
             RecordType::Ptr,
             RecordType::Srv,
             RecordType::Afsdb,
+            RecordType::Caa,
+            RecordType::Cert,
+            RecordType::Dname,
+            RecordType::Dnskey,
+            RecordType::Ds,
+            RecordType::Hinfo,
+            RecordType::Https,
+            RecordType::Key,
+            RecordType::Loc,
+            RecordType::Naptr,
+            RecordType::Nsec,
+            RecordType::Nsec3,
+            RecordType::Opt,
+            RecordType::Rrsig,
+            RecordType::Sshfp,
+            RecordType::Svcb,
+            RecordType::Tlsa,
+            RecordType::Uri,
         ]
     }
 
@@ -62,6 +116,24 @@ impl RecordType {
             RecordType::Ptr => HRecordType::PTR,
             RecordType::Srv => HRecordType::SRV,
             RecordType::Afsdb => HRecordType::AFSDB,
+            RecordType::Caa => HRecordType::CAA,
+            RecordType::Cert => HRecordType::CERT,
+            RecordType::Dname => HRecordType::DNAME,
+            RecordType::Dnskey => HRecordType::DNSKEY,
+            RecordType::Ds => HRecordType::DS,
+            RecordType::Hinfo => HRecordType::HINFO,
+            RecordType::Https => HRecordType::HTTPS,
+            RecordType::Key => HRecordType::KEY,
+            RecordType::Loc => HRecordType::LOC,
+            RecordType::Naptr => HRecordType::NAPTR,
+            RecordType::Nsec => HRecordType::NSEC,
+            RecordType::Nsec3 => HRecordType::NSEC3,
+            RecordType::Opt => HRecordType::OPT,
+            RecordType::Rrsig => HRecordType::RRSIG,
+            RecordType::Sshfp => HRecordType::SSHFP,
+            RecordType::Svcb => HRecordType::SVCB,
+            RecordType::Tlsa => HRecordType::TLSA,
+            RecordType::Uri => HRecordType::URI,
         }
     }
 }
@@ -79,6 +151,24 @@ impl std::fmt::Display for RecordType {
             RecordType::Ptr => write!(f, "PTR"),
             RecordType::Srv => write!(f, "SRV"),
             RecordType::Afsdb => write!(f, "AFSDB"),
+            RecordType::Caa => write!(f, "CAA"),
+            RecordType::Cert => write!(f, "CERT"),
+            RecordType::Dname => write!(f, "DNAME"),
+            RecordType::Dnskey => write!(f, "DNSKEY"),
+            RecordType::Ds => write!(f, "DS"),
+            RecordType::Hinfo => write!(f, "HINFO"),
+            RecordType::Https => write!(f, "HTTPS"),
+            RecordType::Key => write!(f, "KEY"),
+            RecordType::Loc => write!(f, "LOC"),
+            RecordType::Naptr => write!(f, "NAPTR"),
+            RecordType::Nsec => write!(f, "NSEC"),
+            RecordType::Nsec3 => write!(f, "NSEC3"),
+            RecordType::Opt => write!(f, "OPT"),
+            RecordType::Rrsig => write!(f, "RRSIG"),
+            RecordType::Sshfp => write!(f, "SSHFP"),
+            RecordType::Svcb => write!(f, "SVCB"),
+            RecordType::Tlsa => write!(f, "TLSA"),
+            RecordType::Uri => write!(f, "URI"),
         }
     }
 }
@@ -139,7 +229,7 @@ impl std::fmt::Display for ResponseCode {
 pub enum RecordValue {
     /// IP address (A or AAAA)
     Ip(IpAddr),
-    /// Domain name (CNAME, NS, PTR)
+    /// Domain name (CNAME, NS, PTR, DNAME)
     Domain(String),
     /// Text value (TXT)
     Text(String),
@@ -162,6 +252,84 @@ pub enum RecordValue {
         expire: i32,
         minimum: u32,
     },
+    /// CAA record (Certification Authority Authorization)
+    Caa { flags: u8, tag: String, value: String },
+    /// CERT record
+    Cert {
+        cert_type: u16,
+        key_tag: u16,
+        algorithm: u8,
+        certificate: Vec<u8>,
+    },
+    /// DNSKEY record (DNSSEC)
+    Dnskey {
+        flags: u16,
+        protocol: u8,
+        algorithm: u8,
+        public_key: Vec<u8>,
+    },
+    /// DS record (DNSSEC)
+    Ds {
+        key_tag: u16,
+        algorithm: u8,
+        digest_type: u8,
+        digest: Vec<u8>,
+    },
+    /// HINFO record
+    Hinfo { cpu: String, os: String },
+    /// HTTPS record (similar to SVCB)
+    Https {
+        priority: u16,
+        target: String,
+        params: Vec<String>,
+    },
+    /// KEY record
+    Key {
+        flags: u16,
+        protocol: u8,
+        algorithm: u8,
+        public_key: Vec<u8>,
+    },
+    /// LOC record (location)
+    Loc {
+        version: u8,
+        size: u8,
+        horiz_pre: u8,
+        vert_pre: u8,
+        latitude: u32,
+        longitude: u32,
+        altitude: u32,
+    },
+    /// NAPTR record
+    Naptr {
+        order: u16,
+        preference: u16,
+        flags: String,
+        services: String,
+        regexp: String,
+        replacement: String,
+    },
+    /// SSHFP record
+    Sshfp {
+        algorithm: u8,
+        fingerprint_type: u8,
+        fingerprint: Vec<u8>,
+    },
+    /// SVCB record (service binding)
+    Svcb {
+        priority: u16,
+        target: String,
+        params: Vec<String>,
+    },
+    /// TLSA record
+    Tlsa {
+        cert_usage: u8,
+        selector: u8,
+        matching_type: u8,
+        cert_data: Vec<u8>,
+    },
+    /// URI record
+    Uri { priority: u16, weight: u16, target: String },
     /// Generic record value
     Other(String),
 }
@@ -181,6 +349,41 @@ impl RecordValue {
                 target,
             } => format!("{} {} {} {}", priority, weight, port, target),
             RecordValue::Soa { .. } => "SOA".to_string(), // SOA is complex, simplified here
+            RecordValue::Caa { flags, tag, value } => format!("{} {} {}", flags, tag, value),
+            RecordValue::Cert { cert_type, key_tag, algorithm, .. } => {
+                format!("{} {} {}", cert_type, key_tag, algorithm)
+            }
+            RecordValue::Dnskey { flags, protocol, algorithm, .. } => {
+                format!("{} {} {}", flags, protocol, algorithm)
+            }
+            RecordValue::Ds { key_tag, algorithm, digest_type, .. } => {
+                format!("{} {} {}", key_tag, algorithm, digest_type)
+            }
+            RecordValue::Hinfo { cpu, os } => format!("{} {}", cpu, os),
+            RecordValue::Https { priority, target, params } => {
+                format!("{} {} {}", priority, target, params.join(" "))
+            }
+            RecordValue::Key { flags, protocol, algorithm, .. } => {
+                format!("{} {} {}", flags, protocol, algorithm)
+            }
+            RecordValue::Loc { latitude, longitude, altitude, .. } => {
+                format!("{} {} {}", latitude, longitude, altitude)
+            }
+            RecordValue::Naptr { order, preference, flags, services, regexp, replacement } => {
+                format!("{} {} {} {} {} {}", order, preference, flags, services, regexp, replacement)
+            }
+            RecordValue::Sshfp { algorithm, fingerprint_type, .. } => {
+                format!("{} {}", algorithm, fingerprint_type)
+            }
+            RecordValue::Svcb { priority, target, params } => {
+                format!("{} {} {}", priority, target, params.join(" "))
+            }
+            RecordValue::Tlsa { cert_usage, selector, matching_type, .. } => {
+                format!("{} {} {}", cert_usage, selector, matching_type)
+            }
+            RecordValue::Uri { priority, weight, target } => {
+                format!("{} {} {}", priority, weight, target)
+            }
             RecordValue::Other(o) => o.clone(),
         }
     }

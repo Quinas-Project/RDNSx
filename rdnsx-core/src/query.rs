@@ -112,6 +112,50 @@ fn parse_rdata(rdata: &RData, record_type: RecordType) -> Result<RecordValue> {
             expire: soa.expire(),
             minimum: soa.minimum(),
         }),
+        RData::DNAME(dname) => Ok(RecordValue::Domain(dname.to_string())),
+        RData::CAA(caa) => Ok(RecordValue::Caa {
+            flags: caa.flags(),
+            tag: String::from_utf8_lossy(caa.tag()).to_string(),
+            value: String::from_utf8_lossy(caa.value()).to_string(),
+        }),
+        RData::SSHFP(sshfp) => Ok(RecordValue::Sshfp {
+            algorithm: sshfp.algorithm(),
+            fingerprint_type: sshfp.fingerprint_type(),
+            fingerprint: sshfp.fingerprint().to_vec(),
+        }),
+        RData::TLSA(tlsa) => Ok(RecordValue::Tlsa {
+            cert_usage: tlsa.cert_usage(),
+            selector: tlsa.selector(),
+            matching_type: tlsa.matching_type(),
+            cert_data: tlsa.cert_data().to_vec(),
+        }),
+        RData::URI(uri) => Ok(RecordValue::Uri {
+            priority: uri.priority(),
+            weight: uri.weight(),
+            target: String::from_utf8_lossy(uri.target()).to_string(),
+        }),
+        RData::NAPTR(naptr) => Ok(RecordValue::Naptr {
+            order: naptr.order(),
+            preference: naptr.preference(),
+            flags: String::from_utf8_lossy(naptr.flags()).to_string(),
+            services: String::from_utf8_lossy(naptr.services()).to_string(),
+            regexp: String::from_utf8_lossy(naptr.regexp()).to_string(),
+            replacement: naptr.replacement().to_string(),
+        }),
+        RData::HINFO(hinfo) => Ok(RecordValue::Hinfo {
+            cpu: String::from_utf8_lossy(hinfo.cpu()).to_string(),
+            os: String::from_utf8_lossy(hinfo.os()).to_string(),
+        }),
+        RData::LOC(loc) => Ok(RecordValue::Loc {
+            version: loc.version(),
+            size: loc.size(),
+            horiz_pre: loc.horiz_pre(),
+            vert_pre: loc.vert_pre(),
+            latitude: loc.latitude(),
+            longitude: loc.longitude(),
+            altitude: loc.altitude(),
+        }),
+        // For complex records we don't fully parse yet, return as Other
         _ => Ok(RecordValue::Other(format!("{:?}", rdata))),
     }
 }

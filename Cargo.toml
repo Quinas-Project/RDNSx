@@ -7,7 +7,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["RDNSx Contributors"]
 license = "MIT"
-repository = "https://github.com/yourusername/rdnsx"
+repository = "https://github.com/Quinas-Project/RDNSx"
 documentation = "https://docs.rs/rdnsx"
 keywords = ["dns", "resolver", "network", "security"]
 categories = ["network-programming", "command-line-utilities"]
@@ -44,8 +44,9 @@ ipnetwork = "0.20"
 chrono = { version = "0.4", features = ["serde"] }
 
 # Database exports
-elasticsearch = { version = "8.5", features = ["native-tls"] }
+elasticsearch = { version = "9.1.0-alpha.1", features = ["native-tls"] }
 mongodb = "2.8"
+scylla = "0.12"
 
 [profile.release]
 opt-level = 3

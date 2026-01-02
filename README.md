@@ -7,13 +7,13 @@ RDNSx is a Rust rewrite of the popular [DNSx](https://github.com/projectdiscover
 ## Features
 
 - **Fast DNS Resolution**: High-performance DNS queries with async/await concurrency
-- **Multiple Record Types**: Support for A, AAAA, CNAME, MX, TXT, NS, SOA, PTR, SRV records
+- **Comprehensive Record Types**: Support for 27 DNS record types including A, AAAA, CNAME, MX, TXT, NS, SOA, PTR, SRV, CAA, CERT, DNSKEY, DS, HINFO, HTTPS, KEY, LOC, NAPTR, NSEC, NSEC3, OPT, RRSIG, SSHFP, SVCB, TLSA, URI
 - **Custom Resolvers**: Support for multiple DNS resolvers with load balancing and failover
 - **Subdomain Enumeration**: Bruteforce subdomains using wordlists
 - **Wildcard Filtering**: Advanced wildcard detection and filtering
 - **Reverse DNS**: PTR queries for IP ranges and ASN lookups
-- **Database Export**: Export results to Elasticsearch and MongoDB
-- **CLI Interface**: User-friendly command-line interface
+- **Database Export**: Export results to Elasticsearch, MongoDB, and Cassandra
+- **CLI Interface**: User-friendly command-line interface with comprehensive options
 - **Library API**: Embeddable library for use in other Rust projects
 
 ## Prerequisites
@@ -40,7 +40,7 @@ source $HOME/.cargo/env  # Linux/macOS
 ### Build from source:
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/Quinas-Project/RDNSx.git
 cd RDNSx
 cargo build --release
 ```
@@ -86,6 +86,12 @@ rdnsx query -l domains.txt --elasticsearch http://localhost:9200 --elasticsearch
 rdnsx query -l domains.txt --mongodb mongodb://localhost:27017 --mongodb-database dnsx
 ```
 
+### Export to Cassandra
+
+```bash
+rdnsx query -l domains.txt --cassandra 127.0.0.1:9042 --cassandra-username cassandra --cassandra-password password
+```
+
 ### Bruteforce Subdomains
 
 ```bash
@@ -106,19 +112,19 @@ use rdnsx_core::{DnsxClient, RecordType};
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let client = DnsxClient::new()?;
-    
+
     // Query A records
     let records = client.query("example.com", RecordType::A).await?;
     for record in records {
         println!("{}", record);
     }
-    
+
     // Lookup IP addresses
-    let ips = client.lookup("example.com").await?;
+    let ips = client.lookup_ipv4("example.com").await?;
     for ip in ips {
         println!("{}", ip);
     }
-    
+
     Ok(())
 }
 ```
@@ -141,6 +147,11 @@ Export options:
 - `--mongodb`: MongoDB connection string
 - `--mongodb-database`: MongoDB database name (default: dnsx)
 - `--mongodb-collection`: MongoDB collection name (default: records)
+- `--cassandra`: Cassandra contact points (comma-separated, e.g., "127.0.0.1:9042,127.0.0.1:9043")
+- `--cassandra-username`: Cassandra username
+- `--cassandra-password`: Cassandra password
+- `--cassandra-keyspace`: Cassandra keyspace name (default: dnsx)
+- `--cassandra-table`: Cassandra table name (default: records)
 - `--export-batch-size`: Batch size for database exports (default: 1000)
 
 ## Performance

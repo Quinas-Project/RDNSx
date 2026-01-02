@@ -20,3 +20,6 @@ Thumbs.db
 *.dll
 *.so
 *.dylib
+*.exe
+target/
+.DS_Store

@@ -1,5 +1,43 @@
 //! Utility functions
 
+use std::net::SocketAddr;
+
+/// Parse a resolver string into a SocketAddr
+/// Supports formats like: "8.8.8.8", "8.8.8.8:53", "[::1]:53"
+pub fn parse_resolver(resolver_str: &str) -> crate::error::Result<SocketAddr> {
+    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+
+    // Handle IPv4 with optional port
+    if let Ok(ipv4) = resolver_str.parse::<Ipv4Addr>() {
+        return Ok(SocketAddr::new(IpAddr::V4(ipv4), 53));
+    }
+
+    // Handle IPv6 with optional port
+    if let Ok(ipv6) = resolver_str.parse::<Ipv6Addr>() {
+        return Ok(SocketAddr::new(IpAddr::V6(ipv6), 53));
+    }
+
+    // Handle full socket address
+    if let Ok(sockaddr) = resolver_str.parse::<SocketAddr>() {
+        return Ok(sockaddr);
+    }
+
+    // Handle hostname:port format (though we typically use IPs)
+    if resolver_str.contains(':') {
+        let parts: Vec<&str> = resolver_str.split(':').collect();
+        if parts.len() == 2 {
+            if let (Ok(ip), Ok(port)) = (parts[0].parse::<IpAddr>(), parts[1].parse::<u16>()) {
+                return Ok(SocketAddr::new(ip, port));
+            }
+        }
+    }
+
+    Err(crate::error::DnsxError::invalid_input(format!(
+        "Invalid resolver format: {}. Expected IP address or IP:port",
+        resolver_str
+    )))
+}
+
 /// Validate domain name format
 pub fn is_valid_domain(domain: &str) -> bool {
     // Basic domain validation regex
@@ -14,7 +52,7 @@ pub fn is_valid_ip(ip: &str) -> bool {
 }
 
 /// Parse resolver string (can be IP or IP:port)
-pub fn parse_resolver(addr: &str) -> Result<String, crate::error::DnsxError> {
+pub fn parse_resolver(addr: &str) -> crate::error::Result<String> {
     let parts: Vec<&str> = addr.split(':').collect();
     match parts.len() {
         1 => {
