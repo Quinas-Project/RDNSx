@@ -16,6 +16,17 @@ RDNSx is a Rust rewrite of the popular [DNSx](https://github.com/projectdiscover
 - **CLI Interface**: User-friendly command-line interface with comprehensive options
 - **Library API**: Embeddable library for use in other Rust projects
 
+## Documentation
+
+📚 **[Complete Documentation](https://docs.rdnsx.dev)** - Installation guides, API reference, and examples
+
+### Quick Links
+- [Installation Guide](https://docs.rdnsx.dev/guide/installation.html)
+- [Quick Start](https://docs.rdnsx.dev/guide/quick-start.html)
+- [CLI Reference](https://docs.rdnsx.dev/api/cli-reference.html)
+- [DNS Record Types](https://docs.rdnsx.dev/guide/dns-records.html)
+- [Database Exports](https://docs.rdnsx.dev/guide/exports.html)
+
 ## Prerequisites
 
 **Rust 1.70+** is required. Install Rust from [rustup.rs](https://rustup.rs/):

@@ -1,0 +1,16 @@
+{
+  "name": "rdnsx-docs",
+  "version": "0.1.0",
+  "description": "RDNSx Documentation Site",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vuepress dev",
+    "build": "vuepress build",
+    "serve": "vuepress serve dist"
+  },
+  "devDependencies": {
+    "vuepress": "^1.9.10"
+  },
+  "author": "RDNSx Contributors",
+  "license": "MIT"
+}
