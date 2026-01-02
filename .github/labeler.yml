@@ -1,0 +1,78 @@
+# Labeler configuration for automatic PR labeling
+
+# Rust files
+rust:
+  - rdnsx/**/*.rs
+  - rdnsx-core/**/*.rs
+
+# Documentation
+documentation:
+  - docs/**/*
+  - README.md
+  - CHANGELOG.md
+  - CONTRIBUTING.md
+  - INSTALL.md
+  - DOCKER_README.md
+
+# CI/CD
+ci:
+  - .github/workflows/**/*
+  - .github/dependabot.yml
+  - .github/labeler.yml
+  - Dockerfile
+  - docker-compose.yml
+  - build-docker.sh
+
+# Dependencies
+dependencies:
+  - Cargo.toml
+  - Cargo.lock
+  - rdnsx/Cargo.toml
+  - rdnsx-core/Cargo.toml
+  - docs/Gemfile*
+
+# Testing
+testing:
+  - rdnsx-core/tests/**/*
+  - test_*.rs
+  - test_*.txt
+
+# Configuration
+config:
+  - rdnsx.toml
+  - resolvers.txt
+  - .gitignore
+
+# Security
+security:
+  - .github/workflows/security.yml
+  - SECURITY.md
+
+# Performance
+performance:
+  - rdnsx-core/benches/**/*
+  - rdnsx-core/src/resolver.rs
+  - rdnsx-core/src/client.rs
+
+# Bug fixes
+bug:
+  - any:
+      - 'fix'
+      - 'bug'
+      - 'error'
+      - 'crash'
+      - 'panic'
+
+# Features
+enhancement:
+  - any:
+      - 'feat'
+      - 'feature'
+      - 'add'
+
+# Breaking changes
+breaking-change:
+  - any:
+      - 'BREAKING'
+      - 'breaking'
+      - 'major'

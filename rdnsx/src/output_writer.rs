@@ -1,7 +1,7 @@
 //! Output writing utilities
 
 use anyhow::Result;
-use rdnsx_core::types::DnsRecord;
+use rdnsx_core::DnsRecord;
 use std::io::{self, Write};
 
 pub struct OutputWriter {

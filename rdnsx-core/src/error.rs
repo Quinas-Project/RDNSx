@@ -1,6 +1,5 @@
 //! Error types for RDNSx Core
 
-use std::fmt;
 
 use thiserror::Error;
 
@@ -49,6 +48,10 @@ pub enum DnsxError {
     /// Bruteforce error
     #[error("Bruteforce error: {0}")]
     Bruteforce(String),
+
+    /// Address parsing error
+    #[error("Address parsing error: {0}")]
+    AddrParse(#[from] std::net::AddrParseError),
 
     /// Generic error with context
     #[error("{0}")]

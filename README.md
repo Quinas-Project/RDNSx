@@ -21,11 +21,11 @@ RDNSx is a Rust rewrite of the popular [DNSx](https://github.com/projectdiscover
 📚 **[Complete Documentation](https://docs.rdnsx.dev)** - Installation guides, API reference, and examples
 
 ### Quick Links
-- [Installation Guide](https://docs.rdnsx.dev/guide/installation.html)
-- [Quick Start](https://docs.rdnsx.dev/guide/quick-start.html)
-- [CLI Reference](https://docs.rdnsx.dev/api/cli-reference.html)
-- [DNS Record Types](https://docs.rdnsx.dev/guide/dns-records.html)
-- [Database Exports](https://docs.rdnsx.dev/guide/exports.html)
+- [Installation Guide](https://docs.rdnsx.dev/guide/installation)
+- [Quick Start](https://docs.rdnsx.dev/guide/quick-start)
+- [CLI Reference](https://docs.rdnsx.dev/api/cli-reference)
+- [DNS Record Types](https://docs.rdnsx.dev/guide/dns-records)
+- [Configuration Guide](https://docs.rdnsx.dev/guide/configuration)
 
 ## Prerequisites
 
@@ -70,49 +70,101 @@ This will install `rdnsx` to `~/.cargo/bin` (or `%USERPROFILE%\.cargo\bin` on Wi
 
 ### Query DNS Records
 
-Query A records for domains from a file:
-```bash
-rdnsx query -l domains.txt
-```
-
-Query specific record types:
-```bash
-rdnsx query -l domains.txt --mx --txt
-```
-
-Query from stdin:
+Query A records for domains from stdin:
 ```bash
 echo "example.com" | rdnsx query
 ```
 
-### Export to Elasticsearch
-
+Query from a file:
 ```bash
-rdnsx query -l domains.txt --elasticsearch http://localhost:9200 --elasticsearch-index dns-records
+rdnsx query --list domains.txt
 ```
 
-### Export to MongoDB
-
+Query specific record types:
 ```bash
-rdnsx query -l domains.txt --mongodb mongodb://localhost:27017 --mongodb-database dnsx
+rdnsx query --list domains.txt --record-type MX --record-type TXT
 ```
 
-### Export to Cassandra
+Use custom configuration:
+```bash
+rdnsx --config rdnsx.toml query example.com
+```
+
+## Configuration
+
+RDNSx uses a simple configuration file to manage settings. Create a config file using:
 
 ```bash
-rdnsx query -l domains.txt --cassandra 127.0.0.1:9042 --cassandra-username cassandra --cassandra-password password
+rdnsx --create-config rdnsx.toml
+```
+
+Then use it with any command:
+
+```bash
+rdnsx --config rdnsx.toml query example.com
+```
+
+### Configuration Options
+
+The config file supports:
+- **DNS Resolvers**: Custom DNS servers with timeout/retry settings
+- **Performance**: Concurrency limits and rate limiting
+- **Database Exports**: Elasticsearch, MongoDB, and Cassandra configuration
+
+**Example configuration:**
+```toml
+[resolvers]
+servers = ["8.8.8.8", "1.1.1.1"]
+timeout = 5
+retries = 3
+
+[performance]
+threads = 100
+rate_limit = 0
+
+[export.elasticsearch]
+enabled = true
+url = "http://localhost:9200"
+index = "dns-records"
+```
+
+### Export to Databases
+
+Configure exports in your `rdnsx.toml` config file:
+
+```toml
+[export.elasticsearch]
+enabled = true
+url = "http://localhost:9200"
+index = "dns-records"
+
+[export.mongodb]
+enabled = true
+url = "mongodb://localhost:27017"
+database = "dnsx"
+
+[export.cassandra]
+enabled = true
+contact_points = ["127.0.0.1:9042"]
+username = "cassandra"
+password = "password"
+```
+
+Then run queries with export enabled:
+```bash
+rdnsx --config rdnsx.toml query example.com
 ```
 
 ### Bruteforce Subdomains
 
 ```bash
-rdnsx bruteforce -d example.com -w wordlist.txt
+rdnsx bruteforce --domain example.com --wordlist wordlist.txt
 ```
 
 ### Reverse DNS Lookups
 
 ```bash
-rdnsx ptr 173.0.84.0/24
+rdnsx ptr 192.168.1.0/24
 ```
 
 ## Library Usage
@@ -140,30 +192,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-## Configuration
+## Command Line Options
 
 Global options:
-- `-r, --resolvers`: Custom resolver list (file or comma-separated)
-- `-t, --threads`: Concurrency level (default: 100)
+- `-c, --config`: Configuration file path
 - `-o, --output`: Output file
 - `--json`: JSON output format
 - `--silent`: Minimal output
-- `--timeout`: Query timeout in seconds (default: 5)
-- `--retries`: Retry attempts (default: 3)
-- `--rate-limit`: Rate limit (queries per second, 0 = unlimited)
+- `--create-config`: Create example configuration file
 
-Export options:
-- `--elasticsearch`: Elasticsearch connection string
-- `--elasticsearch-index`: Elasticsearch index name (default: dnsx-records)
-- `--mongodb`: MongoDB connection string
-- `--mongodb-database`: MongoDB database name (default: dnsx)
-- `--mongodb-collection`: MongoDB collection name (default: records)
-- `--cassandra`: Cassandra contact points (comma-separated, e.g., "127.0.0.1:9042,127.0.0.1:9043")
-- `--cassandra-username`: Cassandra username
-- `--cassandra-password`: Cassandra password
-- `--cassandra-keyspace`: Cassandra keyspace name (default: dnsx)
-- `--cassandra-table`: Cassandra table name (default: records)
-- `--export-batch-size`: Batch size for database exports (default: 1000)
+Command-specific options are documented in `--help` for each command.
 
 ## Performance
 

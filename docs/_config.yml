@@ -1,0 +1,51 @@
+# Site settings
+title: "RDNSx Documentation"
+description: "Fast and multi-purpose DNS toolkit written in Rust"
+url: "https://docs.rdnsx.dev"
+baseurl: ""
+
+# Build settings
+markdown: kramdown
+highlighter: rouge
+theme: minima
+
+# Plugins
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+# Collections
+collections:
+  guide:
+    output: true
+    permalink: /guide/:name/
+  api:
+    output: true
+    permalink: /api/:name/
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor/
+  - .bundle/
+  - .sass-cache/
+  - .jekyll-cache/
+  - gemfiles/
+
+# Include files
+include:
+  - _pages
+
+# Custom variables
+repository: "Quinas-Project/RDNSx"
+logo: /assets/images/logo.svg
+github_username: Quinas-Project
+
+# SEO and social
+author: "Quinas Project"
+social:
+  name: Quinas Project
+  links:
+    - https://github.com/Quinas-Project/RDNSx

@@ -7,7 +7,7 @@ use tokio::sync::Semaphore;
 use tracing::debug;
 
 use crate::client::DnsxClient;
-use crate::error::{DnsxError, Result};
+use crate::error::Result;
 use crate::input::read_wordlist;
 use crate::types::RecordType;
 
@@ -29,16 +29,17 @@ impl Bruteforcer {
     /// Generate subdomain candidates from wordlist and domain
     fn generate_subdomains(domain: &str, words: Vec<String>, placeholder: &str) -> Vec<String> {
         let mut subdomains = Vec::new();
-        
+
         for word in words {
             let subdomain = if domain.contains(placeholder) {
                 domain.replace(placeholder, &word)
             } else {
                 format!("{}.{}", word.trim(), domain)
             };
+            debug!("Generated subdomain: {} -> {}", word.trim(), subdomain);
             subdomains.push(subdomain);
         }
-        
+
         subdomains
     }
 
@@ -57,35 +58,21 @@ impl Bruteforcer {
         let subdomains = Self::generate_subdomains(domain, words, placeholder);
         debug!("Generated {} subdomain candidates", subdomains.len());
 
-        // Query subdomains concurrently
-        let semaphore = Arc::new(Semaphore::new(self.concurrency));
+        // Query subdomains sequentially for now (to avoid complexity)
         let mut found = Vec::new();
-        let mut handles = Vec::new();
 
         for subdomain in subdomains {
-            let client = Arc::clone(&self.client);
-            let permit = semaphore.clone();
-
-            let handle = tokio::spawn(async move {
-                let _permit = permit.acquire().await.ok();
-                match client.lookup_ipv4(&subdomain).await {
-                    Ok(ips) if !ips.is_empty() => Some(subdomain),
-                    _ => None,
+            match self.client.lookup_ipv4(&subdomain).await {
+                Ok(ips) if !ips.is_empty() => {
+                    debug!("Found subdomain: {}", subdomain);
+                    found.push(subdomain);
                 }
-            });
-
-            handles.push(handle);
-        }
-
-        // Collect results
-        for handle in handles {
-            if let Ok(Some(subdomain)) = handle.await {
-                found.push(subdomain);
+                _ => {} // Subdomain doesn't exist or failed to resolve
             }
         }
 
         // Deduplicate
-        let mut unique: HashSet<String> = HashSet::from_iter(found);
+        let unique: HashSet<String> = HashSet::from_iter(found);
         Ok(unique.into_iter().collect())
     }
 

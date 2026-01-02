@@ -1,86 +1,68 @@
-//! Utility functions
+//! Utility functions for parsing and validation
 
 use std::net::SocketAddr;
 
+use crate::error::{DnsxError, Result};
+
 /// Parse a resolver string into a SocketAddr
-/// Supports formats like: "8.8.8.8", "8.8.8.8:53", "[::1]:53"
-pub fn parse_resolver(resolver_str: &str) -> crate::error::Result<SocketAddr> {
-    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+pub fn parse_resolver(resolver: &str) -> Result<SocketAddr> {
+    // If no port is specified, default to 53
+    let resolver_with_port = if resolver.contains(':') {
+        resolver.to_string()
+    } else {
+        format!("{}:53", resolver)
+    };
 
-    // Handle IPv4 with optional port
-    if let Ok(ipv4) = resolver_str.parse::<Ipv4Addr>() {
-        return Ok(SocketAddr::new(IpAddr::V4(ipv4), 53));
-    }
-
-    // Handle IPv6 with optional port
-    if let Ok(ipv6) = resolver_str.parse::<Ipv6Addr>() {
-        return Ok(SocketAddr::new(IpAddr::V6(ipv6), 53));
-    }
-
-    // Handle full socket address
-    if let Ok(sockaddr) = resolver_str.parse::<SocketAddr>() {
-        return Ok(sockaddr);
-    }
-
-    // Handle hostname:port format (though we typically use IPs)
-    if resolver_str.contains(':') {
-        let parts: Vec<&str> = resolver_str.split(':').collect();
-        if parts.len() == 2 {
-            if let (Ok(ip), Ok(port)) = (parts[0].parse::<IpAddr>(), parts[1].parse::<u16>()) {
-                return Ok(SocketAddr::new(ip, port));
-            }
-        }
-    }
-
-    Err(crate::error::DnsxError::invalid_input(format!(
-        "Invalid resolver format: {}. Expected IP address or IP:port",
-        resolver_str
-    )))
+    resolver_with_port
+        .parse()
+        .map_err(|e| DnsxError::ResolverConfig(format!("Invalid resolver address: {}", e)))
 }
 
-/// Validate domain name format
-pub fn is_valid_domain(domain: &str) -> bool {
-    // Basic domain validation regex
-    let re = regex::Regex::new(r"^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$")
-        .expect("Invalid regex pattern");
-    re.is_match(domain)
+/// Parse a resolver string into a SocketAddr (legacy function - renamed)
+pub fn parse_resolver_string(resolver: &str) -> Result<SocketAddr> {
+    parse_resolver(resolver)
 }
 
-/// Validate IP address
-pub fn is_valid_ip(ip: &str) -> bool {
-    ip.parse::<std::net::IpAddr>().is_ok()
+/// Parse an ASN specification (AS123 or 123)
+pub fn parse_asn(asn_spec: &str) -> Result<u32> {
+    let asn_str = asn_spec.trim().to_uppercase();
+    let asn_str = asn_str.strip_prefix("AS").unwrap_or(&asn_str);
+
+    asn_str
+        .parse()
+        .map_err(|_| DnsxError::InvalidInput(format!("Invalid ASN: {}", asn_spec)))
 }
 
-/// Parse resolver string (can be IP or IP:port)
-pub fn parse_resolver(addr: &str) -> crate::error::Result<String> {
-    let parts: Vec<&str> = addr.split(':').collect();
-    match parts.len() {
-        1 => {
-            // Just IP, add default port 53
-            if is_valid_ip(parts[0]) {
-                Ok(format!("{}:53", parts[0]))
-            } else {
-                Err(crate::error::DnsxError::invalid_input(format!(
-                    "Invalid resolver IP: {}",
-                    addr
-                )))
-            }
+/// Parse an IP range specification (CIDR notation)
+pub fn parse_ip_range(range_spec: &str) -> Result<ipnetwork::IpNetwork> {
+    range_spec
+        .parse()
+        .map_err(|_| DnsxError::InvalidInput(format!("Invalid IP range: {}", range_spec)))
+}
+
+/// Reverse IP address for PTR queries
+pub fn reverse_ip(ip: &str) -> Result<String> {
+    use std::net::IpAddr;
+
+    match ip.parse::<IpAddr>()? {
+        IpAddr::V4(ipv4) => {
+            let octets = ipv4.octets();
+            Ok(format!("{}.{}.{}.{}.in-addr.arpa", octets[3], octets[2], octets[1], octets[0]))
         }
-        2 => {
-            // IP:port
-            if is_valid_ip(parts[0]) && parts[1].parse::<u16>().is_ok() {
-                Ok(addr.to_string())
-            } else {
-                Err(crate::error::DnsxError::invalid_input(format!(
-                    "Invalid resolver format: {}",
-                    addr
-                )))
+        IpAddr::V6(ipv6) => {
+            let segments = ipv6.segments();
+            let mut reversed = String::new();
+
+            for segment in segments.iter().rev() {
+                let hex = format!("{:04x}", segment);
+                for ch in hex.chars().rev() {
+                    reversed.push(ch);
+                    reversed.push('.');
+                }
             }
+            reversed.push_str("ip6.arpa");
+            Ok(reversed)
         }
-        _ => Err(crate::error::DnsxError::invalid_input(format!(
-            "Invalid resolver format: {}",
-            addr
-        ))),
     }
 }
 
@@ -89,30 +71,82 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_is_valid_domain() {
-        assert!(is_valid_domain("example.com"));
-        assert!(is_valid_domain("sub.example.com"));
-        assert!(is_valid_domain("a.b.c.example.com"));
-        assert!(!is_valid_domain("invalid"));
-        assert!(!is_valid_domain("example"));
-        assert!(!is_valid_domain(".example.com"));
-        assert!(!is_valid_domain("example..com"));
+    fn test_parse_resolver_with_port() {
+        let result = parse_resolver("8.8.8.8:53");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "8.8.8.8:53".parse::<SocketAddr>().unwrap());
     }
 
     #[test]
-    fn test_is_valid_ip() {
-        assert!(is_valid_ip("8.8.8.8"));
-        assert!(is_valid_ip("2001:4860:4860::8888"));
-        assert!(!is_valid_ip("invalid"));
-        assert!(!is_valid_ip("999.999.999.999"));
+    fn test_parse_resolver_without_port() {
+        let result = parse_resolver("8.8.8.8");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "8.8.8.8:53".parse::<SocketAddr>().unwrap());
     }
 
     #[test]
-    fn test_parse_resolver() {
-        assert_eq!(parse_resolver("8.8.8.8").unwrap(), "8.8.8.8:53");
-        assert_eq!(parse_resolver("8.8.8.8:53").unwrap(), "8.8.8.8:53");
-        assert_eq!(parse_resolver("8.8.8.8:5353").unwrap(), "8.8.8.8:5353");
-        assert!(parse_resolver("invalid").is_err());
-        assert!(parse_resolver("8.8.8.8:invalid").is_err());
+    fn test_parse_resolver_invalid() {
+        let result = parse_resolver("invalid");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_asn_with_prefix() {
+        let result = parse_asn("AS123");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 123);
+    }
+
+    #[test]
+    fn test_parse_asn_without_prefix() {
+        let result = parse_asn("123");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), 123);
+    }
+
+    #[test]
+    fn test_parse_asn_invalid() {
+        let result = parse_asn("invalid");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_parse_ip_range_ipv4() {
+        let result = parse_ip_range("192.168.1.0/24");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().to_string(), "192.168.1.0/24");
+    }
+
+    #[test]
+    fn test_parse_ip_range_ipv6() {
+        let result = parse_ip_range("2001:db8::/32");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap().to_string(), "2001:db8::/32");
+    }
+
+    #[test]
+    fn test_parse_ip_range_invalid() {
+        let result = parse_ip_range("invalid");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_reverse_ip_ipv4() {
+        let result = reverse_ip("192.168.1.1");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "1.1.168.192.in-addr.arpa");
+    }
+
+    #[test]
+    fn test_reverse_ip_ipv6() {
+        let result = reverse_ip("2001:db8::1");
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa");
+    }
+
+    #[test]
+    fn test_reverse_ip_invalid() {
+        let result = reverse_ip("invalid");
+        assert!(result.is_err());
     }
 }

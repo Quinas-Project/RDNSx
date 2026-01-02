@@ -1,0 +1,52 @@
+# RDNSx Configuration File
+# This file demonstrates all available configuration options
+# Copy this file and modify the values according to your needs
+
+[resolvers]
+# DNS servers to use for queries (add more for redundancy)
+servers = ["8.8.8.8", "8.8.4.4", "1.1.1.1", "1.0.0.1"]
+# Query timeout in seconds
+timeout = 5
+# Number of retries for failed queries
+retries = 3
+
+[performance]
+# Maximum concurrent queries
+threads = 100
+# Rate limit (queries per second, 0 = unlimited)
+rate_limit = 0
+
+[export]
+# Batch size for database exports
+batch_size = 1000
+
+[export.elasticsearch]
+# Enable Elasticsearch export
+enabled = false
+# Elasticsearch server URL
+url = "http://localhost:9200"
+# Index name for DNS records
+index = "dnsx-records"
+
+[export.mongodb]
+# Enable MongoDB export
+enabled = false
+# MongoDB connection URL
+url = "mongodb://localhost:27017"
+# Database name
+database = "dnsx"
+# Collection name
+collection = "records"
+
+[export.cassandra]
+# Enable Cassandra export
+enabled = false
+# Cassandra contact points (host:port)
+contact_points = ["127.0.0.1:9042"]
+# Authentication (leave empty for no auth)
+username = ""
+password = ""
+# Keyspace name
+keyspace = "dnsx"
+# Table name
+table = "records"

@@ -2,25 +2,22 @@
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
+use std::path::PathBuf;
 
 use crate::commands::{bruteforce, ptr, query};
-use crate::config::Config;
+use rdnsx_core::config::Config as CoreConfig;
 
 #[derive(Parser)]
 #[command(name = "rdnsx")]
-#[command(about = "Fast and multi-purpose DNS toolkit", long_about = None)]
+#[command(about = "Fast and multi-purpose DNS toolkit by Quinas Project", long_about = None)]
 #[command(version)]
 pub struct Cli {
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: Option<Commands>,
 
-    /// Custom resolver list (file or comma-separated)
+    /// Configuration file path
     #[arg(short, long, global = true)]
-    pub resolvers: Option<String>,
-
-    /// Concurrency level
-    #[arg(short, long, global = true, default_value_t = 100)]
-    pub threads: usize,
+    pub config: Option<PathBuf>,
 
     /// Output file
     #[arg(short, long, global = true)]
@@ -34,61 +31,18 @@ pub struct Cli {
     #[arg(long, global = true)]
     pub silent: bool,
 
-    /// Query timeout in seconds
-    #[arg(long, global = true, default_value_t = 5)]
-    pub timeout: u64,
+    /// Create example configuration file and exit
+    #[arg(long, help = "Create an example configuration file at the specified path")]
+    pub create_config: Option<PathBuf>,
+}
 
-    /// Retry attempts
-    #[arg(long, global = true, default_value_t = 3)]
-    pub retries: u32,
-
-    /// Rate limit (queries per second, 0 = unlimited)
-    #[arg(long, global = true, default_value_t = 0)]
-    pub rate_limit: u64,
-
-    /// Elasticsearch connection string
-    #[arg(long, global = true)]
-    pub elasticsearch: Option<String>,
-
-    /// Elasticsearch index name
-    #[arg(long, global = true, default_value = "dnsx-records")]
-    pub elasticsearch_index: String,
-
-    /// MongoDB connection string
-    #[arg(long, global = true)]
-    pub mongodb: Option<String>,
-
-    /// MongoDB database name
-    #[arg(long, global = true, default_value = "dnsx")]
-    pub mongodb_database: String,
-
-    /// MongoDB collection name
-    #[arg(long, global = true, default_value = "records")]
-    pub mongodb_collection: String,
-
-    /// Cassandra contact points (comma-separated)
-    #[arg(long, global = true)]
-    pub cassandra: Option<String>,
-
-    /// Cassandra username
-    #[arg(long, global = true)]
-    pub cassandra_username: Option<String>,
-
-    /// Cassandra password
-    #[arg(long, global = true)]
-    pub cassandra_password: Option<String>,
-
-    /// Cassandra keyspace name
-    #[arg(long, global = true, default_value = "dnsx")]
-    pub cassandra_keyspace: String,
-
-    /// Cassandra table name
-    #[arg(long, global = true, default_value = "records")]
-    pub cassandra_table: String,
-
-    /// Batch size for database exports
-    #[arg(long, global = true, default_value_t = 1000)]
-    pub export_batch_size: usize,
+/// Runtime configuration combining CLI args with config file
+#[derive(Debug, Clone)]
+pub struct Config {
+    pub core_config: CoreConfig,
+    pub output_file: Option<String>,
+    pub json_output: bool,
+    pub silent: bool,
 }
 
 #[derive(Subcommand)]
@@ -103,9 +57,27 @@ pub enum Commands {
 
 impl Cli {
     pub async fn run(self) -> Result<()> {
-        let config = Config::from_cli(&self)?;
+        // Handle config file creation (before loading config)
+        if let Some(config_path) = &self.create_config {
+            CoreConfig::create_example_config(config_path)?;
+            return Ok(());
+        }
 
-        match self.command {
+        // Require a command when not creating config
+        let command = self.command.ok_or_else(|| anyhow::anyhow!("A subcommand is required (use --help for more information)"))?;
+
+        // Load configuration
+        let core_config = CoreConfig::load_with_fallback(self.config.as_deref())?;
+
+        // Override config with CLI arguments
+        let config = Config {
+            core_config,
+            output_file: self.output,
+            json_output: self.json,
+            silent: self.silent,
+        };
+
+        match command {
             Commands::Query(args) => query::run(args, config).await,
             Commands::Bruteforce(args) => bruteforce::run(args, config).await,
             Commands::Ptr(args) => ptr::run(args, config).await,

@@ -1,0 +1,45 @@
+# Rust build artifacts
+target/
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# CI/CD
+.github/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile*
+.dockerignore
+
+# Temporary files
+*.tmp
+*.log
+
+# Test files and coverage
+*.profraw
+coverage/
+
+# Node.js (for docs if present)
+node_modules/
+package.json
+package-lock.json
+
+# Build artifacts
+build/
+dist/

@@ -1,0 +1,20 @@
+<header class="site-header" role="banner">
+  <div class="container-lg px-3">
+    <div class="d-flex flex-justify-between flex-items-center">
+      <div class="d-flex flex-items-center">
+        <a class="site-title" href="{{ '/' | relative_url }}">
+          <img src="{{ '/assets/images/logo.svg' | relative_url }}" alt="RDNSx" height="32" class="mr-2">
+          RDNSx
+        </a>
+      </div>
+
+      <nav class="site-nav" role="navigation">
+        <ul class="site-nav-list">
+          <li><a href="{{ '/guide/' | relative_url }}">Guides</a></li>
+          <li><a href="{{ '/api/' | relative_url }}">API</a></li>
+          <li><a href="https://github.com/{{ site.github_username }}/{{ site.repository }}" target="_blank">GitHub</a></li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>

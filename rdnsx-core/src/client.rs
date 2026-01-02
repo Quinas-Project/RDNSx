@@ -1,7 +1,8 @@
 //! Main DNSx client
 
+use std::net::IpAddr;
 use crate::config::DnsxOptions;
-use crate::error::{DnsxError, Result};
+use crate::error::Result;
 use crate::query::QueryEngine;
 use crate::resolver::ResolverPool;
 use crate::types::{DnsRecord, RecordType};
@@ -46,12 +47,12 @@ impl DnsxClient {
 
         // Get IPv4 addresses
         if let Ok(ipv4s) = self.lookup_ipv4(domain).await {
-            ips.extend(ipv4s.into_iter().map(|ip| ip.into()));
+            ips.extend(ipv4s.into_iter().map(|ip| IpAddr::V4(ip)));
         }
 
         // Get IPv6 addresses
         if let Ok(ipv6s) = self.lookup_ipv6(domain).await {
-            ips.extend(ipv6s.into_iter().map(|ip| ip.into()));
+            ips.extend(ipv6s.into_iter().map(|ip| IpAddr::V6(ip)));
         }
 
         Ok(ips)

@@ -1,17 +1,15 @@
 //! Cassandra exporter for DNS records
 
 use std::sync::Arc;
-use std::collections::HashMap;
-
 use async_trait::async_trait;
-use chrono::{DateTime, Utc};
-use scylla::{Session, SessionBuilder};
+use scylla::client::session::Session;
+use scylla::client::session_builder::SessionBuilder;
 use tokio::sync::Mutex;
-use tracing::{debug, error, warn, info};
+use tracing::{debug, error, info};
 
 use crate::error::{DnsxError, Result};
 use crate::export::Exporter;
-use crate::types::{DnsRecord, RecordType};
+use crate::types::DnsRecord;
 
 /// Cassandra exporter for DNS records
 pub struct CassandraExporter {
@@ -80,9 +78,10 @@ impl CassandraExporter {
         );
 
         session
-            .query(cql, &[])
+            .query_unpaged(cql, &[])
             .await
             .map_err(|e| DnsxError::Other(format!("Failed to create keyspace: {}", e)))?;
+        // Note: await_all_pages is not needed for DDL operations
 
         debug!("Keyspace '{}' created or already exists", keyspace);
         Ok(())
@@ -106,9 +105,10 @@ impl CassandraExporter {
         );
 
         session
-            .query(cql, &[])
+            .query_unpaged(cql, &[])
             .await
             .map_err(|e| DnsxError::Other(format!("Failed to create table: {}", e)))?;
+        // Note: await_all_pages is not needed for DDL operations
 
         debug!("Table '{}.{}' created or already exists", keyspace, table);
         Ok(())
@@ -129,14 +129,16 @@ impl CassandraExporter {
             .await
             .map_err(|e| DnsxError::Other(format!("Failed to prepare statement: {}", e)))?;
 
-        for record in records {
+        for record in &records {
             let record_type = record.record_type.to_string();
             let response_code = record.response_code.to_string();
-            let timestamp = record.timestamp.timestamp_millis();
+            let timestamp = record.timestamp.duration_since(std::time::UNIX_EPOCH)
+                .map_err(|e| DnsxError::Other(format!("Invalid timestamp: {}", e)))?
+                .as_millis() as i64;
 
-            let result = self
+            self
                 .session
-                .execute(
+                .execute_unpaged(
                     &prepared,
                     (
                         &record.domain,
@@ -149,12 +151,10 @@ impl CassandraExporter {
                         record.query_time_ms,
                     ),
                 )
-                .await;
+                .await
+                .map_err(|e| DnsxError::Other(format!("Failed to insert record: {}", e)))?;
 
-            if let Err(e) = result {
-                error!("Failed to insert record for {}: {}", record.domain, e);
-                return Err(DnsxError::Other(format!("Failed to insert record: {}", e)));
-            }
+            // Note: execute_unpaged doesn't require await_all_pages for single operations
         }
 
         debug!("Inserted {} records into Cassandra", records.len());

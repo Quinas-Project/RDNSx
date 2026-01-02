@@ -51,7 +51,7 @@ impl MongodbExporter {
         let documents = buffer.drain(..).collect::<Vec<_>>();
 
         self.collection
-            .insert_many(documents.clone(), None)
+            .insert_many(documents.clone())
             .await
             .map_err(|e| DnsxError::Export(format!("MongoDB insert error: {}", e)))?;
 
@@ -78,7 +78,7 @@ async fn ensure_indexes(collection: &Collection<Document>) -> Result<()> {
     ];
 
     collection
-        .create_indexes(indexes, None)
+        .create_indexes(indexes)
         .await
         .map_err(|e| DnsxError::Export(format!("Failed to create indexes: {}", e)))?;
 

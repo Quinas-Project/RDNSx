@@ -5,7 +5,6 @@ use std::fs::File;
 use std::path::Path;
 
 use crate::error::{DnsxError, Result};
-use crate::utils::is_valid_domain;
 
 /// Input source for domains
 pub enum InputSource {

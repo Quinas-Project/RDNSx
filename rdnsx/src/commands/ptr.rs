@@ -2,10 +2,9 @@
 
 use anyhow::Result;
 use clap::Args;
-use rdnsx_core::{DnsxClient, RecordType};
-use rdnsx_core::input::{parse_asn, parse_ip_range, reverse_ip};
+use rdnsx_core::{DnsxClient, RecordType, parse_ip_range, reverse_ip};
 
-use crate::config::Config;
+use crate::cli::Config;
 use crate::output_writer::OutputWriter;
 
 #[derive(Args)]
@@ -17,7 +16,14 @@ pub struct PtrArgs {
 
 pub async fn run(args: PtrArgs, config: Config) -> Result<()> {
     // Create DNS client
-    let client = DnsxClient::with_options(config.dns_options.clone())?;
+    let dns_options = rdnsx_core::config::DnsxOptions {
+        resolvers: config.core_config.resolvers.servers.clone(),
+        timeout: std::time::Duration::from_secs(config.core_config.resolvers.timeout),
+        retries: config.core_config.resolvers.retries,
+        concurrency: config.core_config.performance.threads,
+        rate_limit: config.core_config.performance.rate_limit,
+    };
+    let client = DnsxClient::with_options(dns_options)?;
 
     // Create output writer
     let mut output = OutputWriter::new(config.output_file.clone(), config.json_output, config.silent)?;

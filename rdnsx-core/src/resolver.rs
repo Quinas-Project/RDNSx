@@ -3,10 +3,8 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use hickory_resolver::config::{NameServerConfigGroup, ResolverConfig, ResolverOpts};
-use hickory_resolver::error::ResolveError;
+use hickory_resolver::config::{ResolverConfig, ResolverOpts};
 use hickory_resolver::proto::rr::{RData, RecordType};
-use hickory_resolver::proto::xfer::DnsResponse;
 use hickory_resolver::TokioAsyncResolver;
 use tokio::sync::Semaphore;
 use tracing::{debug, trace, warn};
@@ -24,13 +22,13 @@ pub struct ResolverPool {
     /// Backup resolvers
     backup_resolvers: Vec<TokioAsyncResolver>,
     /// Backup resolver addresses
-    backup_resolver_addrs: Vec<String>,
+    _backup_resolver_addrs: Vec<String>,
     /// Concurrency semaphore
     semaphore: Arc<Semaphore>,
     /// Query timeout
     timeout: Duration,
     /// Number of retries
-    retries: u32,
+    _retries: u32,
 }
 
 impl ResolverPool {
@@ -53,36 +51,55 @@ impl ResolverPool {
         let primary_resolver_addr = resolver_configs[0].clone();
 
         // Create primary resolver
-        let primary_config = create_resolver_config(&resolver_configs[0..1])?;
+        let primary_config = create_resolver_config(&resolver_configs[0..1].iter().map(|addr| addr.to_string()).collect::<Vec<_>>())?;
         let mut resolver_opts = ResolverOpts::default();
         resolver_opts.timeout = options.timeout;
         resolver_opts.attempts = options.retries as usize;
         resolver_opts.validate = false; // Don't validate, just resolve
+        resolver_opts.use_hosts_file = false; // Don't use hosts file
+        resolver_opts.ip_strategy = hickory_resolver::config::LookupIpStrategy::Ipv4thenIpv6; // Prefer IPv4
 
-        let resolver = TokioAsyncResolver::tokio(primary_config, resolver_opts.clone());
+        // Try system resolver first
+        debug!("Attempting to use system resolver configuration");
+        let system_resolver = TokioAsyncResolver::tokio_from_system_conf();
+
+        let resolver = match system_resolver {
+            Ok(resolver) => {
+                debug!("Successfully created system resolver");
+                resolver
+            }
+            Err(e) => {
+                debug!("System resolver failed ({}), using manual configuration", e);
+                debug!("Creating resolver with config: {:?}", primary_config);
+                debug!("Resolver options: timeout={:?}, attempts={}, validate={}", resolver_opts.timeout, resolver_opts.attempts, resolver_opts.validate);
+
+                TokioAsyncResolver::tokio(primary_config, resolver_opts.clone())
+            }
+        };
 
         // Create backup resolvers if any
         let mut backup_resolvers = Vec::new();
         let mut backup_resolver_addrs = Vec::new();
         if resolver_configs.len() > 1 {
             for config in &resolver_configs[1..] {
-                let backup_config = create_resolver_config(&[config.clone()])?;
-                backup_resolvers.push(TokioAsyncResolver::tokio(
+                let backup_config = create_resolver_config(&[config.to_string()])?;
+                let backup_resolver = TokioAsyncResolver::tokio(
                     backup_config,
                     resolver_opts.clone(),
-                ));
-                backup_resolver_addrs.push(config.clone());
+                );
+                backup_resolvers.push(backup_resolver);
+                backup_resolver_addrs.push(config.to_string());
             }
         }
 
         Ok(Self {
             resolver,
-            primary_resolver_addr,
+            primary_resolver_addr: primary_resolver_addr.to_string(),
             backup_resolvers,
-            backup_resolver_addrs,
+            _backup_resolver_addrs: backup_resolver_addrs,
             semaphore: Arc::new(Semaphore::new(options.concurrency)),
             timeout: options.timeout,
-            retries: options.retries,
+            _retries: options.retries,
         })
     }
 
@@ -90,24 +107,27 @@ impl ResolverPool {
     pub async fn query(
         &self,
         domain: &str,
-        record_type: HRecordType,
-    ) -> Result<(DnsResponse, String)> {
+        record_type: RecordType,
+    ) -> Result<(hickory_resolver::lookup::Lookup, String)> {
         let _permit = self.semaphore.acquire().await.map_err(|e| {
             DnsxError::Other(format!("Failed to acquire semaphore: {}", e))
         })?;
 
-        let domain_name = domain
-            .parse()
+        let domain_name = hickory_resolver::Name::parse(domain, None)
             .map_err(|e| DnsxError::invalid_input(format!("Invalid domain name: {}", e)))?;
 
         // Try primary resolver first
-        let result = tokio::time::timeout(self.timeout, self.resolver.query(domain_name.clone(), record_type))
+        debug!("Querying {} ({}) using resolver at {}", domain, record_type, self.primary_resolver_addr);
+        let result = tokio::time::timeout(self.timeout, self.resolver.lookup(domain_name.clone(), record_type))
             .await;
 
         match result {
-            Ok(Ok(response)) => {
-                trace!("Query successful for {} ({})", domain, record_type);
-                Ok((response, self.primary_resolver_addr.clone()))
+            Ok(Ok(lookup)) => {
+                debug!("Query successful for {} ({}), lookup contains {} records", domain, record_type, lookup.iter().count());
+                for rdata in lookup.iter() {
+                    debug!("Found record: {:?}", rdata);
+                }
+                Ok((lookup, self.primary_resolver_addr.clone()))
             }
             Ok(Err(e)) => {
                 debug!("Primary resolver failed for {}: {}", domain, e);
@@ -131,14 +151,14 @@ impl ResolverPool {
         &self,
         domain_name: &hickory_resolver::proto::rr::Name,
         record_type: RecordType,
-    ) -> Result<DnsResponse> {
+    ) -> Result<(hickory_resolver::lookup::Lookup, String)> {
         for backup in &self.backup_resolvers {
-            let result = tokio::time::timeout(self.timeout, backup.query(*domain_name, record_type))
+            let result = tokio::time::timeout(self.timeout, backup.lookup(domain_name.clone(), record_type))
                 .await;
             match result {
                 Ok(Ok(response)) => {
                     trace!("Backup resolver succeeded");
-                    return Ok(response);
+                    return Ok((response, "backup-resolver".to_string()));
                 }
                 Ok(Err(e)) => {
                     debug!("Backup resolver failed: {}", e);
@@ -154,12 +174,12 @@ impl ResolverPool {
 
     /// Lookup A records (IPv4)
     pub async fn lookup_ipv4(&self, domain: &str) -> Result<Vec<std::net::Ipv4Addr>> {
-        let (response, _) = self.query(domain, HRecordType::A).await?;
+        let (lookup, _) = self.query(domain, RecordType::A).await?;
         let mut ips = Vec::new();
 
-        for record in response.records() {
-            if let Some(RData::A(ipv4)) = record.data() {
-                ips.push(*ipv4);
+        for rdata in lookup.iter() {
+            if let RData::A(ipv4) = rdata {
+                ips.push(**ipv4);
             }
         }
 
@@ -168,12 +188,12 @@ impl ResolverPool {
 
     /// Lookup AAAA records (IPv6)
     pub async fn lookup_ipv6(&self, domain: &str) -> Result<Vec<std::net::Ipv6Addr>> {
-        let (response, _) = self.query(domain, HRecordType::AAAA).await?;
+        let (lookup, _) = self.query(domain, RecordType::AAAA).await?;
         let mut ips = Vec::new();
 
-        for record in response.records() {
-            if let Some(RData::AAAA(ipv6)) = record.data() {
-                ips.push(*ipv6);
+        for rdata in lookup.iter() {
+            if let RData::AAAA(ipv6) = rdata {
+                ips.push(**ipv6);
             }
         }
 
@@ -186,7 +206,7 @@ fn create_resolver_config(addrs: &[String]) -> Result<ResolverConfig> {
     use hickory_resolver::config::{NameServerConfig, Protocol};
     use std::net::{SocketAddr, ToSocketAddrs};
 
-    let mut name_servers = NameServerConfigGroup::new();
+    let mut config = ResolverConfig::new();
 
     for addr in addrs {
         let socket_addr: SocketAddr = addr
@@ -195,16 +215,15 @@ fn create_resolver_config(addrs: &[String]) -> Result<ResolverConfig> {
             .next()
             .ok_or_else(|| DnsxError::ResolverConfig(format!("Failed to resolve {}", addr)))?;
 
-        name_servers.push(NameServerConfig {
+        config.add_name_server(NameServerConfig {
             socket_addr,
             protocol: Protocol::Udp, // Default to UDP
             tls_dns_name: None,
             trust_negative_responses: false,
             bind_addr: None,
+            tls_config: None,
         });
     }
 
-    let mut config = ResolverConfig::new();
-    config.add_name_server_config(name_servers);
     Ok(config)
 }

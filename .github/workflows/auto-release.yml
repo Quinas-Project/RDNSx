@@ -1,0 +1,58 @@
+name: Auto Release
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Release Please
+      id: release
+      uses: google-github-actions/release-please-action@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        release-type: rust
+        package-name: rdnsx
+        changelog-types: |
+          [
+            { "type": "feat", "section": "Features", "hidden": false },
+            { "type": "fix", "section": "Bug Fixes", "hidden": false },
+            { "type": "docs", "section": "Documentation", "hidden": false },
+            { "type": "style", "section": "Style", "hidden": false },
+            { "type": "refactor", "section": "Refactoring", "hidden": false },
+            { "type": "perf", "section": "Performance", "hidden": false },
+            { "type": "test", "section": "Testing", "hidden": false },
+            { "type": "build", "section": "Build", "hidden": false },
+            { "type": "ci", "section": "CI/CD", "hidden": false },
+            { "type": "chore", "section": "Chores", "hidden": false }
+          ]
+
+  publish:
+    name: Publish to crates.io
+    needs: release-please
+    runs-on: ubuntu-latest
+    if: ${{ needs.release-please.outputs.release_created }}
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+
+    - name: Publish to crates.io
+      run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
+      working-directory: rdnsx-core
+
+    - name: Publish CLI to crates.io
+      run: cargo publish --token ${{ secrets.CRATES_IO_TOKEN }}
+      working-directory: rdnsx

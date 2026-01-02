@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  rdnsx:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rdnsx
+    # Override the default command if needed
+    # command: ["query", "--resolvers", "8.8.8.8,8.8.4.4", "-d", "example.com", "-a"]
+    volumes:
+      # Mount wordlists for subdomain enumeration
+      - ./wordlists:/app/wordlists:ro
+      # Mount output directory for results
+      - ./output:/app/output
+    # Use host networking for reliable DNS resolution (recommended)
+    network_mode: host
+    # Alternative DNS configuration (uncomment if host networking doesn't work)
+    # dns:
+    #   - 8.8.8.8
+    #   - 8.8.4.4
+    #   - 1.1.1.1
+    # Uncomment and configure if you need database connectivity
+    # networks:
+    #   - rdnsx-network
+    # depends_on:
+    #   - elasticsearch
+    #   - mongodb
+    #   - scylla
+    restart: unless-stopped
+
+  # Optional: Elasticsearch for result export
+  elasticsearch:
+    image: elasticsearch:8.11.0
+    container_name: rdnsx-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - rdnsx-network
+    restart: unless-stopped
+
+  # Optional: MongoDB for result export
+  mongodb:
+    image: mongo:7.0
+    container_name: rdnsx-mongodb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - rdnsx-network
+    restart: unless-stopped
+
+  # Optional: ScyllaDB for result export
+  scylla:
+    image: scylladb/scylla:5.4
+    container_name: rdnsx-scylla
+    ports:
+      - "9042:9042"
+      - "9160:9160"
+    volumes:
+      - scylla-data:/var/lib/scylla
+    networks:
+      - rdnsx-network
+    restart: unless-stopped
+
+networks:
+  rdnsx-network:
+    driver: bridge
+
+volumes:
+  elasticsearch-data:
+  mongodb-data:
+  scylla-data:

@@ -7,7 +7,7 @@ use dashmap::DashMap;
 use rand::Rng;
 use tracing::debug;
 
-use crate::error::{DnsxError, Result};
+use crate::error::Result;
 use crate::resolver::ResolverPool;
 use hickory_resolver::proto::rr::RecordType as HRecordType;
 
@@ -52,8 +52,8 @@ impl WildcardFilter {
     /// Test if a domain level has wildcard DNS
     pub async fn test_wildcard(&self, domain: &str) -> Result<bool> {
         // Check cache first
-        if let Some(&is_wildcard) = self.patterns.get(domain) {
-            return Ok(is_wildcard);
+        if let Some(is_wildcard) = self.patterns.get(domain) {
+            return Ok(*is_wildcard);
         }
 
         // Test with a random subdomain that shouldn't exist

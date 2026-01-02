@@ -1,0 +1,85 @@
+name: PR Automation
+
+on:
+  pull_request:
+    types: [opened, labeled, unlabeled, synchronize]
+
+jobs:
+  label-pr:
+    name: Label Pull Request
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Label PR based on branch
+      uses: actions/labeler@v5
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        configuration-path: .github/labeler.yml
+
+  pr-validation:
+    name: PR Validation
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Validate PR title
+      uses: amannn/action-semantic-pull-request@v5
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        types: |
+          feat
+          fix
+          docs
+          style
+          refactor
+          perf
+          test
+          build
+          ci
+          chore
+          revert
+
+    - name: Check PR size
+      uses: codiga/git-changed-files-size-checker@v1
+      with:
+        max_size: 1000
+        skip_binary_check: true
+
+  pr-feedback:
+    name: PR Feedback
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'opened'
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Comment on PR
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `## Welcome! 🤝
+
+          Thanks for your contribution to RDNSx! Here's a quick checklist to ensure your PR is ready:
+
+          ### ✅ Pre-flight Checklist
+          - [ ] Code compiles without warnings
+          - [ ] Tests pass
+          - [ ] Documentation updated (if needed)
+          - [ ] Commit messages follow [conventional commits](https://conventionalcommits.org/)
+
+          ### 🔍 Review Process
+          - CI checks will run automatically
+          - A maintainer will review your changes
+          - Address any feedback provided
+
+          ### 📚 Resources
+          - [Contributing Guide](https://github.com/Quinas-Project/RDNSx/blob/main/CONTRIBUTING.md)
+          - [Code of Conduct](https://github.com/Quinas-Project/RDNSx/blob/main/CODE_OF_CONDUCT.md)
+
+          Questions? Feel free to ask in the comments!`
+          })

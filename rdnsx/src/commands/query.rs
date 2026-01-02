@@ -4,21 +4,26 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use clap::Args;
-use rdnsx_core::{DnsxClient, RecordType, ResponseCode};
-use rdnsx_core::export::{cassandra::CassandraExporter, elasticsearch::ElasticsearchExporter, mongodb::MongodbExporter};
-use rdnsx_core::resolver::ResolverPool;
-use rdnsx_core::wildcard::WildcardFilter;
+use rdnsx_core::{DnsxClient, RecordType, ResponseCode, CassandraExporter, ElasticsearchExporter, MongodbExporter, ResolverPool, WildcardFilter, Exporter, config::DnsxOptions};
 
-use crate::config::Config;
+use crate::cli::Config;
 use crate::output_writer::OutputWriter;
 
 #[derive(Args)]
 pub struct QueryArgs {
+    /// Domains to query
+    #[arg(value_name = "DOMAIN")]
+    pub domains: Vec<String>,
+
     /// Input file (default: stdin)
     #[arg(short, long)]
     pub list: Option<String>,
 
-    /// A records (default)
+    /// DNS record types to query (can be repeated)
+    #[arg(short = 't', long = "record-type", value_name = "TYPE", action = clap::ArgAction::Append)]
+    pub record_type: Vec<String>,
+
+    /// A records (default if no record types specified)
     #[arg(short, long)]
     pub a: bool,
 
@@ -148,11 +153,18 @@ pub async fn run(args: QueryArgs, config: Config) -> Result<()> {
     let record_types = determine_record_types(&args);
 
     // Create DNS client
-    let client = DnsxClient::with_options(config.dns_options.clone())?;
+    let dns_options = DnsxOptions {
+        resolvers: config.core_config.resolvers.servers.clone(),
+        timeout: std::time::Duration::from_secs(config.core_config.resolvers.timeout),
+        retries: config.core_config.resolvers.retries,
+        concurrency: config.core_config.performance.threads,
+        rate_limit: config.core_config.performance.rate_limit,
+    };
+    let client = DnsxClient::with_options(dns_options.clone())?;
 
     // Create wildcard filter if domain specified
     let wildcard_filter: Option<WildcardFilter> = if let Some(ref base_domain) = args.wildcard_domain {
-        let resolver_pool = Arc::new(ResolverPool::new(&config.dns_options)?);
+        let resolver_pool = Arc::new(ResolverPool::new(&dns_options)?);
         Some(WildcardFilter::new(
             Some(base_domain.clone()),
             resolver_pool,
@@ -173,40 +185,40 @@ pub async fn run(args: QueryArgs, config: Config) -> Result<()> {
     let mut mongo_exporter: Option<MongodbExporter> = None;
     let mut cassandra_exporter: Option<CassandraExporter> = None;
 
-    if let Some(es_url) = &config.export_config.elasticsearch_url {
+    if config.core_config.export.elasticsearch.enabled {
         es_exporter = Some(
             ElasticsearchExporter::new(
-                es_url,
-                &config.export_config.elasticsearch_index,
-                config.export_config.batch_size,
+                &config.core_config.export.elasticsearch.url,
+                &config.core_config.export.elasticsearch.index,
+                config.core_config.export.batch_size,
             )
             .await
             .map_err(|e| anyhow::anyhow!("Failed to create Elasticsearch exporter: {}", e))?,
         );
     }
 
-    if let Some(mongo_url) = &config.export_config.mongodb_url {
+    if config.core_config.export.mongodb.enabled {
         mongo_exporter = Some(
             MongodbExporter::new(
-                mongo_url,
-                &config.export_config.mongodb_database,
-                &config.export_config.mongodb_collection,
-                config.export_config.batch_size,
+                &config.core_config.export.mongodb.url,
+                &config.core_config.export.mongodb.database,
+                &config.core_config.export.mongodb.collection,
+                config.core_config.export.batch_size,
             )
             .await
             .map_err(|e| anyhow::anyhow!("Failed to create MongoDB exporter: {}", e))?,
         );
     }
 
-    if let Some(contact_points) = &config.export_config.cassandra_contact_points {
+    if config.core_config.export.cassandra.enabled {
         cassandra_exporter = Some(
             CassandraExporter::new(
-                contact_points,
-                config.export_config.cassandra_username.as_deref(),
-                config.export_config.cassandra_password.as_deref(),
-                &config.export_config.cassandra_keyspace,
-                &config.export_config.cassandra_table,
-                config.export_config.batch_size,
+                &config.core_config.export.cassandra.contact_points,
+                Some(&config.core_config.export.cassandra.username),
+                Some(&config.core_config.export.cassandra.password),
+                &config.core_config.export.cassandra.keyspace,
+                &config.core_config.export.cassandra.table,
+                config.core_config.export.batch_size,
             )
             .await
             .map_err(|e| anyhow::anyhow!("Failed to create Cassandra exporter: {}", e))?,
@@ -214,7 +226,9 @@ pub async fn run(args: QueryArgs, config: Config) -> Result<()> {
     }
 
     // Read domains from input
-    let domains = read_domains(&args.list)?;
+    let mut domains = read_domains(&args.list)?;
+    // Add positional domains
+    domains.extend(args.domains);
 
     // Query each domain
     for domain in domains {
@@ -228,7 +242,7 @@ pub async fn run(args: QueryArgs, config: Config) -> Result<()> {
 
                     // Apply wildcard filtering if enabled
                     let filtered_records = if let Some(ref filter) = wildcard_filter {
-                        filter.filter(records).await
+                        filter.filter(records.clone()).await
                             .unwrap_or_else(|e| {
                                 if !config.silent {
                                     eprintln!("Warning: Wildcard filtering failed: {}", e);
@@ -298,6 +312,44 @@ pub async fn run(args: QueryArgs, config: Config) -> Result<()> {
 fn determine_record_types(args: &QueryArgs) -> Vec<RecordType> {
     let mut types = Vec::new();
 
+    // If --record-type is specified, use those
+    if !args.record_type.is_empty() {
+        for rt in &args.record_type {
+            match rt.to_uppercase().as_str() {
+                "A" => types.push(RecordType::A),
+                "AAAA" => types.push(RecordType::Aaaa),
+                "CNAME" => types.push(RecordType::Cname),
+                "MX" => types.push(RecordType::Mx),
+                "TXT" => types.push(RecordType::Txt),
+                "NS" => types.push(RecordType::Ns),
+                "SOA" => types.push(RecordType::Soa),
+                "PTR" => types.push(RecordType::Ptr),
+                "SRV" => types.push(RecordType::Srv),
+                "CAA" => types.push(RecordType::Caa),
+                "CERT" => types.push(RecordType::Cert),
+                "DNAME" => types.push(RecordType::Dname),
+                "DNSKEY" => types.push(RecordType::Dnskey),
+                "DS" => types.push(RecordType::Ds),
+                "HINFO" => types.push(RecordType::Hinfo),
+                "HTTPS" => types.push(RecordType::Https),
+                "KEY" => types.push(RecordType::Key),
+                "LOC" => types.push(RecordType::Loc),
+                "NAPTR" => types.push(RecordType::Naptr),
+                "NSEC" => types.push(RecordType::Nsec),
+                "NSEC3" => types.push(RecordType::Nsec3),
+                "OPT" => types.push(RecordType::Opt),
+                "RRSIG" => types.push(RecordType::Rrsig),
+                "SSHFP" => types.push(RecordType::Sshfp),
+                "SVCB" => types.push(RecordType::Svcb),
+                "TLSA" => types.push(RecordType::Tlsa),
+                "URI" => types.push(RecordType::Uri),
+                _ => eprintln!("Warning: Unknown record type '{}', ignoring", rt),
+            }
+        }
+        return types;
+    }
+
+    // Fall back to individual flags
     if args.aaaa {
         types.push(RecordType::Aaaa);
     }

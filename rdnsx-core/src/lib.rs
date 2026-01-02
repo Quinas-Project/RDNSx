@@ -17,10 +17,14 @@ pub mod wildcard;
 pub mod bruteforce;
 
 pub use client::DnsxClient;
-pub use config::{DnsxOptions, ExportConfig};
+pub use config::{DnsxOptions, ExportConfig, DEFAULT_RESOLVERS};
 pub use error::{DnsxError, Result};
 pub use types::{DnsRecord, RecordType, ResponseCode, RecordValue};
 pub use export::{Exporter, CassandraExporter, ElasticsearchExporter, MongodbExporter};
 pub use bruteforce::Bruteforcer;
 pub use wildcard::WildcardFilter;
 pub use resolver::ResolverPool;
+pub use input::{parse_asn, parse_ip_range, reverse_ip};
+
+#[cfg(test)]
+mod tests;
