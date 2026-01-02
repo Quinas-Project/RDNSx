@@ -7,30 +7,55 @@ on:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    name: Build and Release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            name: linux-x86_64
+            ext: ""
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            name: windows-x86_64
+            ext: ".exe"
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            name: macos-x86_64
+            ext: ""
     steps:
     - uses: actions/checkout@v4
 
     - name: Install Rust
       uses: dtolnay/rust-toolchain@stable
+      with:
+        targets: ${{ matrix.target }}
 
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
 
-    - name: Build release
-      run: cargo build --release
+    - name: Build release binary
+      run: cargo build --release --bin rdnsx --target ${{ matrix.target }}
 
-    - name: Create release archives
+    - name: Package binary (Unix)
+      if: matrix.os != 'windows-latest'
       run: |
-        cd target/release
-        tar czf rdnsx-linux-x86_64.tar.gz rdnsx
-        cd ../..
+        cd target/${{ matrix.target }}/release
+        tar czf rdnsx-${{ matrix.name }}.tar.gz rdnsx
 
-    - name: Release
+    - name: Package binary (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        cd target/${{ matrix.target }}/release
+        7z a rdnsx-${{ matrix.name }}.zip rdnsx.exe
+
+    - name: Upload release assets
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          target/release/rdnsx-linux-x86_64.tar.gz
+          target/${{ matrix.target }}/release/rdnsx-${{ matrix.name }}.tar.gz
+          target/${{ matrix.target }}/release/rdnsx-${{ matrix.name }}.zip
         generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
