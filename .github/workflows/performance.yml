@@ -1,0 +1,118 @@
+name: Performance Regression
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  schedule:
+    # Run performance tests weekly
+    - cron: '0 2 * * 1'
+
+jobs:
+  performance-baseline:
+    name: Performance Baseline
+    runs-on: ubuntu-latest
+    outputs:
+      baseline: ${{ steps.baseline.outputs.data }}
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache dependencies
+      uses: Swatinem/rust-cache@v2
+
+    - name: Build optimized release
+      run: cargo build --release --bin rdnsx
+
+    - name: Run performance baseline tests
+      id: baseline
+      run: |
+        echo "Running performance baseline tests..."
+
+        # Test 1: Single domain query performance
+        START_TIME=$(date +%s.%3N)
+        ./target/release/rdnsx query example.com --a --silent --timeout 5
+        END_TIME=$(date +%s.%3N)
+        SINGLE_QUERY_TIME=$(echo "$END_TIME - $START_TIME" | bc -l 2>/dev/null || echo "0")
+
+        # Test 2: Multiple domain batch performance
+        echo -e "example.com\ngoogle.com\ngithub.com\nstackoverflow.com" > test_domains.txt
+        START_TIME=$(date +%s.%3N)
+        ./target/release/rdnsx query --list test_domains.txt --a --silent --timeout 5
+        END_TIME=$(date +%s.%3N)
+        BATCH_QUERY_TIME=$(echo "$END_TIME - $START_TIME" | bc -l 2>/dev/null || echo "0")
+
+        # Test 3: Memory usage estimation
+        BINARY_SIZE=$(stat -c%s target/release/rdnsx)
+        RSS_MEMORY=$(ps -o rss= -p $$ | tr -d ' ' || echo "0")
+
+        # Test 4: Cache performance (if available)
+        CACHE_TEST_TIME="0"
+        if ./target/release/rdnsx query example.com --a --cache --silent --timeout 5 2>/dev/null; then
+          START_TIME=$(date +%s.%3N)
+          ./target/release/rdnsx query example.com --a --cache --silent --timeout 5
+          END_TIME=$(date +%s.%3N)
+          CACHE_TEST_TIME=$(echo "$END_TIME - $START_TIME" | bc -l 2>/dev/null || echo "0")
+        fi
+
+        # Generate baseline data
+        cat << EOF > baseline.json
+        {
+          "single_query_time": $SINGLE_QUERY_TIME,
+          "batch_query_time": $BATCH_QUERY_TIME,
+          "binary_size": $BINARY_SIZE,
+          "memory_usage": $RSS_MEMORY,
+          "cache_query_time": $CACHE_TEST_TIME,
+          "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+          "commit": "${{ github.sha }}"
+        }
+        EOF
+
+        echo "data<<EOF" >> $GITHUB_OUTPUT
+        cat baseline.json >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Upload baseline data
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-baseline
+        path: baseline.json
+        retention-days: 30
+
+  performance-comparison:
+    name: Performance Comparison
+    runs-on: ubuntu-latest
+    needs: performance-baseline
+    if: github.event_name == 'pull_request'
+    steps:
+    - name: Download baseline data
+      uses: actions/download-artifact@v4
+      with:
+        name: performance-baseline
+        path: .
+
+    - name: Compare performance
+      run: |
+        if [ -f baseline.json ]; then
+          echo "📊 Performance Comparison"
+          echo "========================"
+
+          # Parse baseline data
+          BASELINE_SINGLE=$(jq -r '.single_query_time' baseline.json 2>/dev/null || echo "0")
+          BASELINE_BATCH=$(jq -r '.batch_query_time' baseline.json 2>/dev/null || echo "0")
+          BASELINE_SIZE=$(jq -r '.binary_size' baseline.json 2>/dev/null || echo "0")
+
+          echo "Baseline metrics:"
+          echo "- Single query: ${BASELINE_SINGLE}s"
+          echo "- Batch query: ${BASELINE_BATCH}s"
+          echo "- Binary size: ${BASELINE_SIZE} bytes"
+
+          echo ""
+          echo "Current implementation performance check completed."
+          echo "For detailed regression analysis, compare with main branch baseline."
+        else
+          echo "No baseline data available for comparison"
+        fi

@@ -13,14 +13,14 @@ use crate::config::DnsxOptions;
 use crate::error::{DnsxError, Result};
 use crate::utils;
 
-/// DNS resolver pool
+/// DNS resolver pool with connection reuse
 pub struct ResolverPool {
     /// Primary resolver
-    resolver: TokioAsyncResolver,
+    resolver: Arc<TokioAsyncResolver>,
     /// Primary resolver address
     primary_resolver_addr: String,
     /// Backup resolvers
-    backup_resolvers: Vec<TokioAsyncResolver>,
+    backup_resolvers: Vec<Arc<TokioAsyncResolver>>,
     /// Backup resolver addresses
     _backup_resolver_addrs: Vec<String>,
     /// Concurrency semaphore
@@ -29,6 +29,8 @@ pub struct ResolverPool {
     timeout: Duration,
     /// Number of retries
     _retries: u32,
+    /// Round-robin index for load balancing
+    rr_index: std::sync::atomic::AtomicUsize,
 }
 
 impl ResolverPool {
@@ -93,13 +95,14 @@ impl ResolverPool {
         }
 
         Ok(Self {
-            resolver,
+            resolver: Arc::new(resolver),
             primary_resolver_addr: primary_resolver_addr.to_string(),
-            backup_resolvers,
+            backup_resolvers: backup_resolvers.into_iter().map(Arc::new).collect(),
             _backup_resolver_addrs: backup_resolver_addrs,
             semaphore: Arc::new(Semaphore::new(options.concurrency)),
             timeout: options.timeout,
             _retries: options.retries,
+            rr_index: std::sync::atomic::AtomicUsize::new(0),
         })
     }
 
@@ -116,9 +119,20 @@ impl ResolverPool {
         let domain_name = hickory_resolver::Name::parse(domain, None)
             .map_err(|e| DnsxError::invalid_input(format!("Invalid domain name: {}", e)))?;
 
-        // Try primary resolver first
-        debug!("Querying {} ({}) using resolver at {}", domain, record_type, self.primary_resolver_addr);
-        let result = tokio::time::timeout(self.timeout, self.resolver.lookup(domain_name.clone(), record_type))
+        // Use round-robin load balancing across all resolvers
+        let resolver_index = self.rr_index.fetch_add(1, std::sync::atomic::Ordering::Relaxed) % (self.backup_resolvers.len() + 1);
+
+        let (resolver, resolver_addr) = if resolver_index == 0 {
+            // Primary resolver
+            (&self.resolver, &self.primary_resolver_addr)
+        } else {
+            // Backup resolver
+            let backup_index = resolver_index - 1;
+            (&self.backup_resolvers[backup_index], "backup-resolver")
+        };
+
+        debug!("Querying {} ({}) using resolver at {}", domain, record_type, resolver_addr);
+        let result = tokio::time::timeout(self.timeout, resolver.lookup(domain_name.clone(), record_type))
             .await;
 
         match result {
@@ -127,16 +141,17 @@ impl ResolverPool {
                 for rdata in lookup.iter() {
                     debug!("Found record: {:?}", rdata);
                 }
-                Ok((lookup, self.primary_resolver_addr.clone()))
+                Ok((lookup, resolver_addr.to_string()))
             }
             Ok(Err(e)) => {
-                debug!("Primary resolver failed for {}: {}", domain, e);
-                // Try backup resolvers
-                self.try_backup_resolvers(&domain_name, record_type).await
+                debug!("Resolver {} failed for {}: {}", resolver_addr, domain, e);
+                // Try other resolvers with failover
+                self.try_failover_resolvers(&domain_name, record_type, resolver_index).await
             }
             Err(_) => {
-                warn!("Query timeout for {} ({})", domain, record_type);
-                Err(DnsxError::timeout(self.timeout))
+                warn!("Query timeout for {} ({}) on resolver {}", domain, record_type, resolver_addr);
+                // Try other resolvers with failover
+                self.try_failover_resolvers(&domain_name, record_type, resolver_index).await
             }
         }
     }
@@ -146,25 +161,42 @@ impl ResolverPool {
         &self.primary_resolver_addr
     }
 
-    /// Try backup resolvers if primary fails
-    async fn try_backup_resolvers(
+    /// Try failover resolvers if the selected resolver fails
+    async fn try_failover_resolvers(
         &self,
         domain_name: &hickory_resolver::proto::rr::Name,
         record_type: RecordType,
+        failed_index: usize,
     ) -> Result<(hickory_resolver::lookup::Lookup, String)> {
-        for backup in &self.backup_resolvers {
-            let result = tokio::time::timeout(self.timeout, backup.lookup(domain_name.clone(), record_type))
+        let total_resolvers = self.backup_resolvers.len() + 1;
+
+        // Try all other resolvers except the failed one
+        for i in 0..total_resolvers {
+            if i == failed_index {
+                continue; // Skip the failed resolver
+            }
+
+            let (resolver, resolver_addr) = if i == 0 {
+                // Primary resolver
+                (&self.resolver, &self.primary_resolver_addr)
+            } else {
+                // Backup resolver
+                (&self.backup_resolvers[i - 1], "backup-resolver")
+            };
+
+            let result = tokio::time::timeout(self.timeout, resolver.lookup(domain_name.clone(), record_type))
                 .await;
+
             match result {
                 Ok(Ok(response)) => {
-                    trace!("Backup resolver succeeded");
-                    return Ok((response, "backup-resolver".to_string()));
+                    trace!("Failover resolver {} succeeded", resolver_addr);
+                    return Ok((response, resolver_addr.to_string()));
                 }
                 Ok(Err(e)) => {
-                    debug!("Backup resolver failed: {}", e);
+                    debug!("Failover resolver {} failed: {}", resolver_addr, e);
                 }
                 Err(_) => {
-                    debug!("Backup resolver timeout");
+                    debug!("Failover resolver {} timeout", resolver_addr);
                 }
             }
         }

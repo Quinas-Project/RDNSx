@@ -91,24 +91,28 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   build:
-    name: Build and Upload Assets
+    name: Build Release Assets
     needs: create-release
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             name: linux-x86_64
             ext: ""
+            runner: ubuntu-22.04
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             name: windows-x86_64
             ext: ".exe"
+            runner: windows-2022
           - os: macos-latest
             target: x86_64-apple-darwin
             name: macos-x86_64
             ext: ""
+            runner: macos-12
     steps:
     - uses: actions/checkout@v4
 
@@ -119,29 +123,72 @@ jobs:
 
     - name: Cache dependencies
       uses: Swatinem/rust-cache@v2
+      with:
+        key: cargo-release-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
 
     - name: Build release binary
       run: cargo build --release --bin rdnsx --target ${{ matrix.target }}
+
+    - name: Test release binary
+      run: |
+        if [ "${{ matrix.os }}" = "windows-latest" ]; then
+          target/${{ matrix.target }}/release/rdnsx.exe --version
+          target/${{ matrix.target }}/release/rdnsx.exe --help > /dev/null
+        else
+          target/${{ matrix.target }}/release/rdnsx --version
+          target/${{ matrix.target }}/release/rdnsx --help > /dev/null
+        fi
 
     - name: Package binary (Unix)
       if: matrix.os != 'windows-latest'
       run: |
         cd target/${{ matrix.target }}/release
         tar czf rdnsx-${{ matrix.name }}.tar.gz rdnsx
+        sha256sum rdnsx-${{ matrix.name }}.tar.gz > rdnsx-${{ matrix.name }}.tar.gz.sha256
 
     - name: Package binary (Windows)
       if: matrix.os == 'windows-latest'
+      shell: bash
       run: |
         cd target/${{ matrix.target }}/release
         7z a rdnsx-${{ matrix.name }}.zip rdnsx.exe
+        sha256sum rdnsx-${{ matrix.name }}.zip > rdnsx-${{ matrix.name }}.zip.sha256
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-${{ matrix.name }}
+        path: |
+          target/${{ matrix.target }}/release/rdnsx-${{ matrix.name }}.tar.gz
+          target/${{ matrix.target }}/release/rdnsx-${{ matrix.name }}.tar.gz.sha256
+          target/${{ matrix.target }}/release/rdnsx-${{ matrix.name }}.zip
+          target/${{ matrix.target }}/release/rdnsx-${{ matrix.name }}.zip.sha256
+        retention-days: 30
+
+  upload-assets:
+    name: Upload Release Assets
+    needs: [create-release, build]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download all build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: artifacts/
+
+    - name: List downloaded artifacts
+      run: find artifacts/ -type f -name "*.tar.gz" -o -name "*.zip" -o -name "*.sha256"
 
     - name: Upload release assets
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ needs.create-release.outputs.version }}
         files: |
-          target/${{ matrix.target }}/release/rdnsx-${{ matrix.name }}.tar.gz
-          target/${{ matrix.target }}/release/rdnsx-${{ matrix.name }}.zip
+          artifacts/build-linux-x86_64/rdnsx-linux-x86_64.tar.gz
+          artifacts/build-linux-x86_64/rdnsx-linux-x86_64.tar.gz.sha256
+          artifacts/build-windows-x86_64/rdnsx-windows-x86_64.zip
+          artifacts/build-windows-x86_64/rdnsx-windows-x86_64.zip.sha256
+          artifacts/build-macos-x86_64/rdnsx-macos-x86_64.tar.gz
+          artifacts/build-macos-x86_64/rdnsx-macos-x86_64.tar.gz.sha256
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

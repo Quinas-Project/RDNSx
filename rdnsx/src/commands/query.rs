@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use clap::Args;
-use rdnsx_core::{DnsxClient, RecordType, ResponseCode, CassandraExporter, ElasticsearchExporter, MongodbExporter, ResolverPool, WildcardFilter, Exporter, config::DnsxOptions};
+use rdnsx_core::{DnsxClient, RecordType, ResponseCode, CassandraExporter, CassandraConfig, CassandraMetrics, ElasticsearchExporter, MongodbExporter, ResolverPool, WildcardFilter, Exporter, config::DnsxOptions, ConcurrentProcessor, ConcurrencyConfig, ProcessingMetrics, DomainStreamer, DnsCache, CachedDnsClient, AdaptiveBatchSizer};
 
 use crate::cli::Config;
 use crate::output_writer::OutputWriter;
@@ -146,6 +146,30 @@ pub struct QueryArgs {
     /// Response values only
     #[arg(long)]
     pub resp_only: bool,
+
+    /// Use streaming mode for large files (reduces memory usage)
+    #[arg(long)]
+    pub stream: bool,
+
+    /// Enable DNS response caching (reduces redundant queries)
+    #[arg(long)]
+    pub cache: bool,
+
+    /// Cache TTL in seconds (default: 300)
+    #[arg(long, default_value = "300")]
+    pub cache_ttl: u64,
+
+    /// Maximum cache size (default: 10000)
+    #[arg(long, default_value = "10000")]
+    pub cache_size: usize,
+
+    /// Cassandra batch size (default: 1000)
+    #[arg(long, default_value = "1000")]
+    pub cassandra_batch_size: usize,
+
+    /// Number of Cassandra worker threads (default: 4)
+    #[arg(long, default_value = "4")]
+    pub cassandra_workers: usize,
 }
 
 pub async fn run(args: QueryArgs, config: Config) -> Result<()> {
@@ -211,84 +235,212 @@ pub async fn run(args: QueryArgs, config: Config) -> Result<()> {
     }
 
     if config.core_config.export.cassandra.enabled {
+        let cassandra_config = CassandraConfig {
+            contact_points: config.core_config.export.cassandra.contact_points.clone(),
+            username: Some(config.core_config.export.cassandra.username.clone()),
+            password: Some(config.core_config.export.cassandra.password.clone()),
+            keyspace: config.core_config.export.cassandra.keyspace.clone(),
+            table: config.core_config.export.cassandra.table.clone(),
+            batch_size: args.cassandra_batch_size,
+            num_workers: args.cassandra_workers,
+            ..Default::default()
+        };
+
         cassandra_exporter = Some(
-            CassandraExporter::new(
-                &config.core_config.export.cassandra.contact_points,
-                Some(&config.core_config.export.cassandra.username),
-                Some(&config.core_config.export.cassandra.password),
-                &config.core_config.export.cassandra.keyspace,
-                &config.core_config.export.cassandra.table,
-                config.core_config.export.batch_size,
-            )
-            .await
-            .map_err(|e| anyhow::anyhow!("Failed to create Cassandra exporter: {}", e))?,
+            CassandraExporter::with_config(cassandra_config)
+                .await
+                .map_err(|e| anyhow::anyhow!("Failed to create Cassandra exporter: {}", e))?,
         );
     }
 
-    // Read domains from input
-    let mut domains = read_domains(&args.list)?;
-    // Add positional domains
-    domains.extend(args.domains);
+    // Determine if we should use streaming mode
+    let use_streaming = args.stream || args.list.is_some(); // Auto-enable for files
 
-    // Query each domain
-    for domain in domains {
-        for record_type in &record_types {
-            match client.query(&domain, *record_type).await {
-                Ok(mut records) => {
-                    // Filter by response code if specified
-                    if !allowed_rcodes.is_empty() {
-                        records.retain(|r| allowed_rcodes.contains(&r.response_code));
-                    }
+    let domains: Vec<String> = if use_streaming && args.list.is_some() {
+        // Use streaming for large files
+        if !config.silent {
+            eprintln!("Using streaming mode for large file processing");
+        }
+        Vec::new() // We'll stream domains directly
+    } else {
+        // Load all domains into memory for small lists or stdin
+        let mut domains = read_domains(&args.list)?;
+        domains.extend(args.domains.clone());
 
-                    // Apply wildcard filtering if enabled
-                    let filtered_records = if let Some(ref filter) = wildcard_filter {
-                        filter.filter(records.clone()).await
-                            .unwrap_or_else(|e| {
-                                if !config.silent {
-                                    eprintln!("Warning: Wildcard filtering failed: {}", e);
-                                }
+        if domains.is_empty() {
+            if !config.silent {
+                eprintln!("No domains to process. Use --list to specify a file or provide domains as arguments.");
+            }
+            return Ok(());
+        }
+        domains
+    };
+
+    // Create adaptive batch sizer if enabled
+    let mut adaptive_batcher = AdaptiveBatchSizer::new(1000, 100, 10000);
+
+    // Create concurrency configuration with adaptive batching
+    let concurrency_config = ConcurrencyConfig {
+        max_concurrent: config.core_config.performance.threads,
+        batch_size: adaptive_batcher.current_size(),
+        timeout: std::time::Duration::from_secs(config.core_config.resolvers.timeout),
+        rate_limit: config.core_config.performance.rate_limit,
+    };
+
+    // Create cached client if caching is enabled
+    let client_clone: Arc<dyn rdnsx_core::DnsQuery + Send + Sync> = if args.cache {
+        if !config.silent {
+            eprintln!("DNS caching enabled (TTL: {}s, max size: {})", args.cache_ttl, args.cache_size);
+        }
+        let cache = DnsCache::new(args.cache_size, std::time::Duration::from_secs(args.cache_ttl));
+        Arc::new(CachedDnsClient::new(client, cache))
+    } else {
+        Arc::new(client) as Arc<dyn rdnsx_core::DnsQuery + Send + Sync>
+    };
+
+    // Create the concurrent processor with all record types and domains
+    let processor = ConcurrentProcessor::new(concurrency_config, {
+        let record_types = record_types.clone();
+        let client = Arc::clone(&client_clone);
+        let allowed_rcodes = allowed_rcodes.clone();
+        let wildcard_filter = wildcard_filter.clone();
+        let silent = config.silent;
+
+        move |domain: String| {
+            let record_types = record_types.clone();
+            let client = Arc::clone(&client);
+            let allowed_rcodes = allowed_rcodes.clone();
+            let wildcard_filter = wildcard_filter.clone();
+            let silent = silent;
+
+            Box::pin(async move {
+                let mut all_records = Vec::new();
+
+                // Query each record type for this domain
+                for record_type in &record_types {
+                    match client.query(&domain, *record_type).await {
+                        Ok(mut records) => {
+                            // Filter by response code if specified
+                            if !allowed_rcodes.is_empty() {
+                                records.retain(|r| allowed_rcodes.contains(&r.response_code));
+                            }
+
+                            // Apply wildcard filtering if enabled
+                            let filtered_records = if let Some(ref filter) = wildcard_filter {
+                                filter.filter(records.clone()).await
+                                    .unwrap_or_else(|e| {
+                                        if !silent {
+                                            eprintln!("Warning: Wildcard filtering failed for {}: {}", domain, e);
+                                        }
+                                        records
+                                    })
+                            } else {
                                 records
-                            })
-                    } else {
-                        records
-                    };
+                            };
 
-                    // Output records
-                    for record in filtered_records {
-                        output.write_record(&record, args.resp_only)?;
-
-                        // Export to Elasticsearch if configured
-                        if let Some(ref exporter) = es_exporter {
-                            if let Err(e) = exporter.export(record.clone()).await {
-                                if !config.silent {
-                                    eprintln!("Warning: Failed to export to Elasticsearch: {}", e);
-                                }
-                            }
+                            all_records.extend(filtered_records);
                         }
-
-                        // Export to MongoDB if configured
-                        if let Some(ref exporter) = mongo_exporter {
-                            if let Err(e) = exporter.export(record.clone()).await {
-                                if !config.silent {
-                                    eprintln!("Warning: Failed to export to MongoDB: {}", e);
-                                }
-                            }
-                        }
-
-                        // Export to Cassandra if configured
-                        if let Some(ref exporter) = cassandra_exporter {
-                            if let Err(e) = exporter.export(record.clone()).await {
-                                if !config.silent {
-                                    eprintln!("Warning: Failed to export to Cassandra: {}", e);
-                                }
+                        Err(e) => {
+                            if !silent {
+                                eprintln!("Error querying {} ({:?}): {}", domain, record_type, e);
                             }
                         }
                     }
                 }
-                Err(e) => {
-                    if !config.silent {
-                        eprintln!("Error querying {} ({:?}): {}", domain, record_type, e);
-                    }
+
+                Ok(all_records)
+            })
+        }
+    });
+
+    // Process domains concurrently with adaptive batching
+    let (all_records, metrics) = if use_streaming && args.list.is_some() {
+        // Streaming mode for large files with adaptive batching
+        let file = std::fs::File::open(args.list.as_ref().unwrap())?;
+        let reader = std::io::BufReader::new(file);
+        let streamer = DomainStreamer::new(reader);
+
+        let domain_iter = streamer.stream_domains().filter_map(|result| match result {
+            Ok(domain) if !domain.is_empty() => Some(domain),
+            Ok(_) => None, // Skip empty lines
+            Err(e) => {
+                eprintln!("Error reading domain: {}", e);
+                None
+            }
+        });
+
+        // Collect domains for adaptive batching
+        let domains_vec: Vec<String> = domain_iter.collect();
+
+        // Process with adaptive batching
+        process_with_adaptive_batching(
+            processor,
+            domains_vec,
+            &mut adaptive_batcher,
+            !config.silent,
+        ).await?
+    } else {
+        // In-memory processing for smaller lists
+        processor.process_stream(domains.into_iter()).await?
+    };
+
+    if !config.silent {
+        eprintln!("Processed {} domains, collected {} records ({:.1} qps)",
+                 metrics.total_domains, all_records.len(), metrics.queries_per_second);
+
+        // Show cache statistics if caching was enabled
+        if args.cache {
+            if let Some(cached_client) = client_clone.as_ref().downcast_ref::<CachedDnsClient<DnsxClient>>() {
+                let cache_stats = cached_client.cache_stats();
+                eprintln!("Cache: {} total entries ({} valid, {} expired)",
+                         cache_stats.total_entries, cache_stats.valid_entries, cache_stats.expired_entries);
+            }
+        }
+
+        // Show Cassandra performance metrics if Cassandra export was enabled
+        if config.core_config.export.cassandra.enabled {
+            if let Some(ref cassandra) = cassandra_exporter {
+                let metrics = cassandra.metrics();
+                if metrics.total_records > 0 {
+                    eprintln!("Cassandra: {} records inserted in {:.2}s ({:.1} rps), {} batches, {} errors, {} retries",
+                             metrics.total_records,
+                             metrics.total_insert_time.as_secs_f64(),
+                             metrics.records_per_second,
+                             metrics.batches_processed,
+                             metrics.errors,
+                             metrics.retries);
+                }
+            }
+        }
+    }
+
+    // Output all records
+    for record in all_records {
+        output.write_record(&record, args.resp_only)?;
+
+        // Export to Elasticsearch if configured
+        if let Some(ref exporter) = es_exporter {
+            if let Err(e) = exporter.export(record.clone()).await {
+                if !config.silent {
+                    eprintln!("Warning: Failed to export to Elasticsearch: {}", e);
+                }
+            }
+        }
+
+        // Export to MongoDB if configured
+        if let Some(ref exporter) = mongo_exporter {
+            if let Err(e) = exporter.export(record.clone()).await {
+                if !config.silent {
+                    eprintln!("Warning: Failed to export to MongoDB: {}", e);
+                }
+            }
+        }
+
+        // Export to Cassandra if configured
+        if let Some(ref exporter) = cassandra_exporter {
+            if let Err(e) = exporter.export(record.clone()).await {
+                if !config.silent {
+                    eprintln!("Warning: Failed to export to Cassandra: {}", e);
                 }
             }
         }
@@ -469,4 +621,72 @@ fn parse_rcodes(rcode_str: &Option<String>) -> Result<Vec<ResponseCode>> {
     } else {
         Ok(Vec::new()) // No filter
     }
+}
+
+/// Process domains with adaptive batch sizing based on performance
+async fn process_with_adaptive_batching<F>(
+    processor: ConcurrentProcessor<String, F>,
+    domains: Vec<String>,
+    adaptive_batcher: &mut AdaptiveBatchSizer,
+    verbose: bool,
+) -> Result<(Vec<DnsRecord>, ProcessingMetrics)>
+where
+    F: Fn(String) -> futures::future::BoxFuture<'static, Result<Vec<DnsRecord>>> + Send + Sync + 'static,
+{
+    let mut all_records = Vec::new();
+    let mut total_metrics = ProcessingMetrics::default();
+    let start_time = std::time::Instant::now();
+
+    // Process in chunks with adaptive batch sizing
+    let mut start_idx = 0;
+    let mut iteration = 0;
+
+    while start_idx < domains.len() {
+        let batch_size = adaptive_batcher.current_size().min(domains.len() - start_idx);
+        let end_idx = start_idx + batch_size;
+
+        if verbose && iteration > 0 {
+            eprintln!("Processing batch {}-{} (adaptive batch size: {})",
+                     start_idx + 1, end_idx, batch_size);
+        }
+
+        // Create a new processor with the current batch size
+        let batch_processor = ConcurrentProcessor::new(
+            ConcurrencyConfig {
+                max_concurrent: processor.config.max_concurrent,
+                batch_size: batch_size.min(1000), // Cap internal batch size
+                timeout: processor.config.timeout,
+                rate_limit: processor.config.rate_limit,
+            },
+            processor.query_fn.clone(),
+        );
+
+        let batch_domains = domains[start_idx..end_idx].to_vec();
+        let (batch_records, batch_metrics) = batch_processor.process_stream(batch_domains.into_iter()).await?;
+
+        all_records.extend(batch_records);
+        total_metrics.total_domains += batch_metrics.total_domains;
+        total_metrics.successful_queries += batch_metrics.successful_queries;
+        total_metrics.failed_queries += batch_metrics.failed_queries;
+        total_metrics.total_query_time += batch_metrics.total_query_time;
+
+        // Adjust batch size based on performance
+        if batch_metrics.queries_per_second > 0.0 {
+            adaptive_batcher.adjust(batch_metrics.queries_per_second);
+        }
+
+        start_idx = end_idx;
+        iteration += 1;
+    }
+
+    // Calculate final metrics
+    let total_time = start_time.elapsed();
+    if total_metrics.total_domains > 0 {
+        total_metrics.average_query_time = total_metrics.total_query_time / total_metrics.total_domains as u32;
+    }
+    if total_time.as_secs_f64() > 0.0 {
+        total_metrics.queries_per_second = total_metrics.total_domains as f64 / total_time.as_secs_f64();
+    }
+
+    Ok((all_records, total_metrics))
 }

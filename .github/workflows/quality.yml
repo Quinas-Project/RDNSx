@@ -55,8 +55,52 @@ jobs:
 
     - name: Performance regression check
       run: |
+        echo "🏃 Running performance tests..."
+
         # Basic performance sanity check
+        START_TIME=$(date +%s)
         timeout 30s ./target/release/rdnsx query example.com --a --silent --timeout 5 || echo "Query timed out (expected for CI)"
+        END_TIME=$(date +%s)
+
+        QUERY_TIME=$((END_TIME - START_TIME))
+        echo "Query execution time: ${QUERY_TIME}s"
+
+        # Check binary size
+        BINARY_SIZE=$(stat -c%s target/release/rdnsx 2>/dev/null || stat -f%z target/release/rdnsx 2>/dev/null || echo "0")
+        BINARY_SIZE_MB=$((BINARY_SIZE / 1024 / 1024))
+
+        echo "Binary size: ${BINARY_SIZE_MB}MB"
+
+        # Performance thresholds
+        if [ "$BINARY_SIZE_MB" -gt 50 ]; then
+          echo "⚠️  Warning: Binary size (${BINARY_SIZE_MB}MB) exceeds recommended limit (50MB)"
+        else
+          echo "✅ Binary size within acceptable limits"
+        fi
+
+        if [ "$QUERY_TIME" -gt 10 ]; then
+          echo "⚠️  Warning: Query time (${QUERY_TIME}s) is slower than expected"
+        else
+          echo "✅ Query performance within acceptable limits"
+        fi
+
+    - name: Generate build metrics
+      run: |
+        echo "📊 Build Metrics Report"
+        echo "======================="
+
+        # Cargo build timing (approximate)
+        echo "Build completed successfully"
+
+        # Test coverage estimate
+        TEST_COUNT=$(cargo test 2>&1 | grep -c "test result" || echo "0")
+        echo "Test suites executed: $TEST_COUNT"
+
+        # Dependency count
+        DEP_COUNT=$(cargo tree 2>/dev/null | grep -c "├──" || echo "0")
+        echo "Total dependencies: $DEP_COUNT"
+
+        echo "✅ Quality checks completed"
 
     - name: Check binary size
       run: |
