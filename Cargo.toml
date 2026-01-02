@@ -45,8 +45,8 @@ chrono = { version = "0.4", features = ["serde"] }
 
 # Database exports
 elasticsearch = { version = "9.1.0-alpha.1", features = ["native-tls"] }
-mongodb = "2.8"
-scylla = "0.12"
+mongodb = "3.4"
+scylla = "1.4"
 
 [profile.release]
 opt-level = 3
