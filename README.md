@@ -11,7 +11,9 @@ RDNSx is a Rust rewrite of the popular [DNSx](https://github.com/projectdiscover
 - **Custom Resolvers**: Support for multiple DNS resolvers with load balancing and failover
 - **Subdomain Enumeration**: Bruteforce subdomains using wordlists
 - **Wildcard Filtering**: Advanced wildcard detection and filtering
-- **Reverse DNS**: PTR queries for IP ranges and ASN lookups
+- **ASN Enumeration**: Discover IP ranges and network information for Autonomous Systems (Google, Amazon, Cloudflare, etc.)
+- **Enhanced Reverse DNS**: Concurrent PTR queries for IP ranges and ASN-based lookups with smart rate limiting
+- **Advanced Enumeration**: Zone transfers, DNSSEC analysis, CDN detection, email security analysis, and more
 - **Database Export**: Export results to Elasticsearch, MongoDB, and Cassandra
 - **CLI Interface**: User-friendly command-line interface with comprehensive options
 - **Library API**: Embeddable library for use in other Rust projects
@@ -66,6 +68,32 @@ cargo install --path .
 
 This will install `rdnsx` to `~/.cargo/bin` (or `%USERPROFILE%\.cargo\bin` on Windows).
 
+### Docker Installation
+
+#### Using Pre-built Images
+```bash
+# Pull from Docker Hub
+docker pull quinas/rdnsx:latest
+docker run --rm quinas/rdnsx --help
+```
+
+#### Building from Source
+```bash
+# Build using provided Dockerfile
+docker build -f docker/Dockerfile -t rdnsx .
+docker run --rm rdnsx --help
+```
+
+#### Docker Compose Setup
+For complex deployments with database exports:
+```bash
+# Start RDNSx with databases
+docker-compose -f docker/docker-compose.yml up
+
+# Mount config directory for persistent settings
+docker run --rm -v $(pwd)/config:/app/config rdnsx --config /app/config/rdnsx.toml query example.com
+```
+
 ## Usage
 
 ### Query DNS Records
@@ -87,21 +115,88 @@ rdnsx query --list domains.txt --record-type MX --record-type TXT
 
 Use custom configuration:
 ```bash
-rdnsx --config rdnsx.toml query example.com
+rdnsx --config config/rdnsx.toml query example.com
+```
+
+### Advanced Enumeration
+
+RDNSx supports comprehensive DNS enumeration techniques for security research and network analysis:
+
+#### ASN Enumeration
+Discover IP ranges and network information for Autonomous Systems:
+```bash
+# Enumerate Google ASN
+rdnsx enumerate --technique asn-enumeration --target AS15169
+
+# Works with or without "AS" prefix
+rdnsx enumerate --technique asn-enumeration --target 16509
+```
+
+#### Comprehensive DNS Analysis
+Perform complete DNS enumeration on a target:
+```bash
+rdnsx enumerate --technique comprehensive --target example.com
+```
+
+#### Available Enumeration Techniques:
+- `zone-transfer` - Attempt DNS zone transfer (AXFR)
+- `email-security` - Enumerate SPF, DMARC, DKIM records
+- `cdn-detection` - Detect CDN usage and configuration
+- `ipv6-enumeration` - Enumerate IPv6 deployment
+- `dnssec-enumeration` - Analyze DNSSEC configuration
+- `dnssec-zone-walking` - Perform DNSSEC zone walking (NSEC enumeration)
+- `wildcard-analysis` - Analyze wildcard DNS configurations
+- `passive-dns` - Perform passive DNS enumeration
+- `server-fingerprint` - Fingerprint DNS server capabilities
+- `asn-enumeration` - Enumerate ASN information and IP ranges
+- `comprehensive` - All enumeration techniques combined
+
+### Enhanced Reverse DNS Lookups
+
+RDNSx provides powerful PTR enumeration with ASN integration:
+
+#### ASN-Based PTR Lookups
+Use ASN enumeration results for targeted reverse DNS:
+```bash
+# Lookup PTR records for Google ASN
+rdnsx ptr AS15169
+
+# Results include IP ranges automatically discovered from ASN
+```
+
+#### Smart IP Range Handling
+Large IP ranges are automatically limited to prevent excessive lookups:
+```bash
+# Large ranges are capped at 10,000 IPs
+rdnsx ptr 192.168.0.0/16  # Limited to 10,000 IPs with warning
+
+# Per-prefix limits for ASN ranges
+rdnsx ptr AS16509         # Up to 1,000 IPs per prefix
+```
+
+#### Concurrent Processing
+PTR lookups use concurrent processing for better performance:
+```bash
+# Up to 50 simultaneous PTR queries
+rdnsx ptr 8.8.8.0/24
 ```
 
 ## Configuration
 
-RDNSx uses a simple configuration file to manage settings. Create a config file using:
+RDNSx uses a TOML configuration file for advanced settings. Configuration files are stored in the `config/` directory:
 
+### Creating Configuration
 ```bash
-rdnsx --create-config rdnsx.toml
+# Create example configuration file
+rdnsx --create-config config/rdnsx.toml
 ```
 
-Then use it with any command:
-
+### Using Configuration
 ```bash
-rdnsx --config rdnsx.toml query example.com
+# Use custom configuration with any command
+rdnsx --config config/rdnsx.toml query example.com
+
+# Configuration includes resolver settings, performance tuning, and database exports
 ```
 
 ### Configuration Options
@@ -152,7 +247,7 @@ password = "password"
 
 Then run queries with export enabled:
 ```bash
-rdnsx --config rdnsx.toml query example.com
+rdnsx --config config/rdnsx.toml query example.com
 ```
 
 ### Bruteforce Subdomains

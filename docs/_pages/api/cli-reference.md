@@ -158,12 +158,58 @@ rdnsx ptr AS15169
 rdnsx ptr 8.8.8.8 1.1.1.1 192.168.1.0/24
 ```
 
+### `rdnsx enumerate`
+
+Advanced DNS enumeration techniques for comprehensive reconnaissance.
+
+```
+USAGE:
+    rdnsx enumerate [OPTIONS] --technique <TECHNIQUE> --target <TARGET>
+
+ARGS:
+    -t, --technique <TECHNIQUE>    Enumeration technique to use [possible values: zone-transfer, email-security, cdn-detection, ipv6-enumeration, server-fingerprint, dnssec-enumeration, dnssec-zone-walking, wildcard-analysis, passive-dns, asn-enumeration, comprehensive]
+    -T, --target <TARGET>          Target domain or ASN for enumeration
+
+OPTIONS:
+    -r, --resolvers <RESOLVERS>    Custom resolver list
+        --rate-limit <RATE_LIMIT>  Rate limit (queries per second)
+        --timeout <TIMEOUT>        Query timeout in seconds
+        --retries <RETRIES>        Retry attempts
+    -c, --concurrent <CONCURRENT>  Maximum concurrent enumeration tasks
+```
+
+#### Examples
+
+```bash
+# ASN enumeration
+rdnsx enumerate --technique asn-enumeration --target AS15169
+rdnsx enumerate --technique asn-enumeration --target 16509
+
+# DNSSEC analysis
+rdnsx enumerate --technique dnssec-enumeration --target example.com
+
+# Email security analysis
+rdnsx enumerate --technique email-security --target example.com
+
+# Zone transfer attempt
+rdnsx enumerate --technique zone-transfer --target example.com
+
+# Comprehensive enumeration (all techniques)
+rdnsx enumerate --technique comprehensive --target example.com
+
+# CDN detection
+rdnsx enumerate --technique cdn-detection --target example.com
+
+# IPv6 enumeration
+rdnsx enumerate --technique ipv6-enumeration --target example.com
+```
+
 ## Configuration File
 
 RDNSx can be configured using a TOML configuration file. Create an example config:
 
 ```bash
-rdnsx --create-config rdnsx.toml
+rdnsx --create-config config/rdnsx.toml
 ```
 
 ### Configuration Options

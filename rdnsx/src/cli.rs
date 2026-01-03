@@ -4,7 +4,7 @@ use anyhow::Result;
 use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
-use crate::commands::{bruteforce, ptr, query};
+use crate::commands::{bruteforce, enumerate, ptr, query};
 use rdnsx_core::config::Config as CoreConfig;
 
 #[derive(Parser)]
@@ -51,8 +51,10 @@ pub enum Commands {
     Query(query::QueryArgs),
     /// Enumerate subdomains (bruteforce)
     Bruteforce(bruteforce::BruteforceArgs),
-    /// Reverse DNS lookups (IP ranges, ASN)
+    /// Reverse DNS lookups (IP ranges)
     Ptr(ptr::PtrArgs),
+    /// Advanced DNS enumeration techniques (including ASN enumeration)
+    Enumerate(enumerate::EnumerateArgs),
 }
 
 impl Cli {
@@ -81,6 +83,7 @@ impl Cli {
             Commands::Query(args) => query::run(args, config).await,
             Commands::Bruteforce(args) => bruteforce::run(args, config).await,
             Commands::Ptr(args) => ptr::run(args, config).await,
+            Commands::Enumerate(args) => enumerate::run(args, config).await,
         }
     }
 }

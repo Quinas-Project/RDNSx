@@ -9,7 +9,7 @@ use tokio::time::timeout;
 use tracing::{debug, warn, info};
 
 use crate::error::{DnsxError, Result};
-use crate::types::{DnsRecord, RecordType};
+use crate::types::DnsRecord;
 
 /// Configuration for concurrent processing
 #[derive(Debug, Clone)]
@@ -54,9 +54,21 @@ pub struct ConcurrentProcessor<T, F> {
     _phantom: std::marker::PhantomData<T>,
 }
 
+impl<T, F> ConcurrentProcessor<T, F> {
+    /// Get the concurrency config
+    pub fn config(&self) -> &ConcurrencyConfig {
+        &self.config
+    }
+
+    /// Get the query function
+    pub fn query_fn(&self) -> &Arc<F> {
+        &self.query_fn
+    }
+}
+
 impl<T, F> ConcurrentProcessor<T, F>
 where
-    T: Send + 'static,
+    T: Send + Clone + 'static,
     F: Fn(T) -> futures::future::BoxFuture<'static, Result<Vec<DnsRecord>>> + Send + Sync + 'static,
 {
     /// Create a new concurrent processor
@@ -263,7 +275,7 @@ impl<R: std::io::BufRead> DomainStreamer<R> {
                         Some(Ok(trimmed.to_string()))
                     }
                 }
-                Some(Err(e)) => Some(Err(DnsxError::Io(e))),
+                Some(Err(e)) => Some(Err(DnsxError::Other(format!("IO error: {}", e)))),
                 None => None,
             }
         }).filter_map(|result| {

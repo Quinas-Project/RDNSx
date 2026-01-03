@@ -4,13 +4,14 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use hickory_resolver::config::{ResolverConfig, ResolverOpts};
-use hickory_resolver::proto::rr::{RData, RecordType};
+use hickory_resolver::proto::rr::RData;
 use hickory_resolver::TokioAsyncResolver;
 use tokio::sync::Semaphore;
 use tracing::{debug, trace, warn};
 
 use crate::config::DnsxOptions;
 use crate::error::{DnsxError, Result};
+use crate::types::RecordType;
 use crate::utils;
 
 /// DNS resolver pool with connection reuse
@@ -124,15 +125,15 @@ impl ResolverPool {
 
         let (resolver, resolver_addr) = if resolver_index == 0 {
             // Primary resolver
-            (&self.resolver, &self.primary_resolver_addr)
+            (&self.resolver, self.primary_resolver_addr.clone())
         } else {
             // Backup resolver
             let backup_index = resolver_index - 1;
-            (&self.backup_resolvers[backup_index], "backup-resolver")
+            (&self.backup_resolvers[backup_index], "backup-resolver".to_string())
         };
 
         debug!("Querying {} ({}) using resolver at {}", domain, record_type, resolver_addr);
-        let result = tokio::time::timeout(self.timeout, resolver.lookup(domain_name.clone(), record_type))
+        let result = tokio::time::timeout(self.timeout, resolver.lookup(domain_name.clone(), record_type.to_hickory()))
             .await;
 
         match result {
@@ -178,13 +179,13 @@ impl ResolverPool {
 
             let (resolver, resolver_addr) = if i == 0 {
                 // Primary resolver
-                (&self.resolver, &self.primary_resolver_addr)
+                (&self.resolver, self.primary_resolver_addr.clone())
             } else {
                 // Backup resolver
-                (&self.backup_resolvers[i - 1], "backup-resolver")
+                (&self.backup_resolvers[i - 1], "backup-resolver".to_string())
             };
 
-            let result = tokio::time::timeout(self.timeout, resolver.lookup(domain_name.clone(), record_type))
+            let result = tokio::time::timeout(self.timeout, resolver.lookup(domain_name.clone(), record_type.to_hickory()))
                 .await;
 
             match result {
@@ -220,7 +221,7 @@ impl ResolverPool {
 
     /// Lookup AAAA records (IPv6)
     pub async fn lookup_ipv6(&self, domain: &str) -> Result<Vec<std::net::Ipv6Addr>> {
-        let (lookup, _) = self.query(domain, RecordType::AAAA).await?;
+        let (lookup, _) = self.query(domain, RecordType::Aaaa).await?;
         let mut ips = Vec::new();
 
         for rdata in lookup.iter() {

@@ -24,9 +24,7 @@ impl QueryEngine {
     /// Query a domain for a specific record type
     pub async fn query(&self, domain: &str, record_type: RecordType) -> Result<Vec<DnsRecord>> {
         let start = Instant::now();
-        let hickory_type = record_type.to_hickory();
-
-        let (lookup, resolver_addr) = self.resolver_pool.query(domain, hickory_type).await?;
+        let (lookup, resolver_addr) = self.resolver_pool.query(domain, record_type).await?;
 
         let query_time_ms = start.elapsed().as_secs_f64() * 1000.0;
         // Lookup represents successful queries, so assume NOERROR
@@ -36,10 +34,10 @@ impl QueryEngine {
         debug!("Processing {} records from lookup", lookup.iter().count());
 
         // Extract records from lookup
-        for rdata in lookup.iter() {
-            debug!("Processing RData: {:?}", rdata);
-            let value = parse_rdata(&rdata)?;
-            let ttl = 300; // Default TTL since we can't access it from RData
+        for record in lookup.records() {
+            debug!("Processing Record: {:?}", record);
+            let value = parse_rdata(record.data().expect("Record data missing"))?;
+            let ttl = record.ttl() as u32;
 
             records.push(DnsRecord::new(
                 domain.to_string(),
@@ -80,7 +78,7 @@ impl QueryEngine {
 }
 
 /// Parse RData into RecordValue
-fn parse_rdata(rdata: &RData) -> Result<RecordValue> {
+pub fn parse_rdata(rdata: &RData) -> Result<RecordValue> {
     match rdata {
         RData::A(ipv4) => Ok(RecordValue::Ip(IpAddr::V4(**ipv4))),
         RData::AAAA(ipv6) => Ok(RecordValue::Ip(IpAddr::V6(**ipv6))),
@@ -115,10 +113,13 @@ fn parse_rdata(rdata: &RData) -> Result<RecordValue> {
             minimum: soa.minimum(),
         }),
         RData::ANAME(dname) => Ok(RecordValue::Domain(dname.to_string())),
-        RData::CAA(caa) => {
-            // For now, skip CAA parsing until API is better understood
-            Ok(RecordValue::Other(format!("CAA record: flags={}, tag={}", caa.issuer_critical(), caa.tag())))
-        }
+        // CAA parsing temporarily disabled due to API compatibility issues
+        // RData::CAA(caa) => Ok(RecordValue::Caa {
+        //     flags: caa.issuer_critical() as u8,
+        //     tag: caa.tag().to_string(),
+        //     value: String::from_utf8_lossy(caa.value().as_ref()).to_string(),
+        // }),
+        RData::CAA(_) => Ok(RecordValue::Text("CAA record parsing disabled".to_string())),
         RData::SSHFP(sshfp) => Ok(RecordValue::Sshfp {
             algorithm: sshfp.algorithm().into(),
             fingerprint_type: sshfp.fingerprint_type().into(),

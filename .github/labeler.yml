@@ -12,16 +12,16 @@ documentation:
   - CHANGELOG.md
   - CONTRIBUTING.md
   - INSTALL.md
-  - DOCKER_README.md
+  - docker/DOCKER_README.md
 
 # CI/CD
 ci:
   - .github/workflows/**/*
   - .github/dependabot.yml
   - .github/labeler.yml
-  - Dockerfile
-  - docker-compose.yml
-  - build-docker.sh
+  - docker/Dockerfile
+  - docker/docker-compose.yml
+  - scripts/build-docker.sh
 
 # Dependencies
 dependencies:
@@ -39,8 +39,8 @@ testing:
 
 # Configuration
 config:
-  - rdnsx.toml
-  - resolvers.txt
+  - config/rdnsx.toml
+  - config/resolvers.txt
   - .gitignore
 
 # Security

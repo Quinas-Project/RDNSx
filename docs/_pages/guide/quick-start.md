@@ -104,7 +104,7 @@ rdnsx query example.com --resp-only
 
 ### Create Default Config
 ```bash
-rdnsx --create-config rdnsx.toml
+rdnsx --create-config config/rdnsx.toml
 ```
 
 ### Use Custom Config
@@ -127,6 +127,40 @@ rdnsx query --timeout 10 domains.txt
 ### Rate Limiting
 ```bash
 rdnsx query --rate-limit 50 domains.txt
+```
+
+## Advanced Enumeration
+
+### ASN Enumeration
+Discover IP ranges and network information for Autonomous Systems:
+
+```bash
+# Enumerate Google ASN
+rdnsx enumerate --technique asn-enumeration --target AS15169
+
+# Enumerate Amazon ASN
+rdnsx enumerate --technique asn-enumeration --target 16509
+```
+
+### Enhanced PTR Lookups
+Perform reverse DNS lookups with ASN integration:
+
+```bash
+# PTR lookup for Google ASN (uses ASN enumeration results)
+rdnsx ptr AS15169
+
+# Smart IP range handling (auto-limits large ranges)
+rdnsx ptr 192.168.0.0/16
+
+# Concurrent processing for better performance
+rdnsx ptr 8.8.8.0/24
+```
+
+### Comprehensive DNS Analysis
+Run all enumeration techniques on a target:
+
+```bash
+rdnsx enumerate --technique comprehensive --target example.com
 ```
 
 ## Next Steps

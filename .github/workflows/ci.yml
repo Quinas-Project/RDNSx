@@ -281,8 +281,8 @@ jobs:
         done
 
         echo "Testing configuration creation..."
-        ./target/release/rdnsx --create-config test-config.toml
-        if [ -f test-config.toml ]; then
+        ./target/release/rdnsx --create-config tests/test-config.toml
+        if [ -f tests/test-config.toml ]; then
           echo "✅ Config file created successfully"
         else
           echo "❌ Config file creation failed"

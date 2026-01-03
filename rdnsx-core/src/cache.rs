@@ -8,7 +8,7 @@ use std::time::{Duration, Instant};
 use parking_lot::RwLock;
 use tracing::debug;
 
-use crate::error::{DnsxError, Result};
+use crate::error::Result;
 use crate::types::{DnsRecord, RecordType};
 
 /// Cache key combining domain and record type
@@ -258,6 +258,16 @@ pub trait DnsQuery {
 
 #[async_trait::async_trait]
 impl DnsQuery for crate::client::DnsxClient {
+    async fn query(&self, domain: &str, record_type: RecordType) -> Result<Vec<DnsRecord>> {
+        self.query(domain, record_type).await
+    }
+}
+
+#[async_trait::async_trait]
+impl<C> DnsQuery for CachedDnsClient<C>
+where
+    C: DnsQuery + Send + Sync,
+{
     async fn query(&self, domain: &str, record_type: RecordType) -> Result<Vec<DnsRecord>> {
         self.query(domain, record_type).await
     }

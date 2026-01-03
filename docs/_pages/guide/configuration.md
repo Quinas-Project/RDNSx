@@ -14,7 +14,7 @@ RDNSx supports extensive configuration through TOML files, command-line argument
 Create a configuration file:
 
 ```bash
-rdnsx --create-config rdnsx.toml
+rdnsx --create-config config/rdnsx.toml
 ```
 
 ## Configuration Sections
@@ -176,7 +176,7 @@ RDNSx validates configuration on startup:
 
 ```bash
 # Test configuration
-rdnsx --config rdnsx.toml --help
+rdnsx --config config/rdnsx.toml --help
 ```
 
 Invalid configurations will display error messages with suggestions.

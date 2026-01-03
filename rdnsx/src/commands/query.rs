@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use clap::Args;
-use rdnsx_core::{DnsxClient, RecordType, ResponseCode, CassandraExporter, CassandraConfig, CassandraMetrics, ElasticsearchExporter, MongodbExporter, ResolverPool, WildcardFilter, Exporter, config::DnsxOptions, ConcurrentProcessor, ConcurrencyConfig, ProcessingMetrics, DomainStreamer, DnsCache, CachedDnsClient, AdaptiveBatchSizer};
+use rdnsx_core::{DnsxClient, RecordType, ResponseCode, DnsRecord, CassandraExporter, CassandraConfig, ElasticsearchExporter, MongodbExporter, ResolverPool, WildcardFilter, Exporter, config::DnsxOptions, ConcurrentProcessor, ConcurrencyConfig, ProcessingMetrics, DomainStreamer, DnsCache, CachedDnsClient, AdaptiveBatchSizer};
 
 use crate::cli::Config;
 use crate::output_writer::OutputWriter;
@@ -288,14 +288,15 @@ pub async fn run(args: QueryArgs, config: Config) -> Result<()> {
     };
 
     // Create cached client if caching is enabled
-    let client_clone: Arc<dyn rdnsx_core::DnsQuery + Send + Sync> = if args.cache {
+    let (client_clone, cached_client_ref): (Arc<dyn rdnsx_core::DnsQuery + Send + Sync>, Option<Arc<CachedDnsClient<DnsxClient>>>) = if args.cache {
         if !config.silent {
             eprintln!("DNS caching enabled (TTL: {}s, max size: {})", args.cache_ttl, args.cache_size);
         }
         let cache = DnsCache::new(args.cache_size, std::time::Duration::from_secs(args.cache_ttl));
-        Arc::new(CachedDnsClient::new(client, cache))
+        let cached_client = Arc::new(CachedDnsClient::new(client, cache));
+        (cached_client.clone() as Arc<dyn rdnsx_core::DnsQuery + Send + Sync>, Some(cached_client))
     } else {
-        Arc::new(client) as Arc<dyn rdnsx_core::DnsQuery + Send + Sync>
+        (Arc::new(client) as Arc<dyn rdnsx_core::DnsQuery + Send + Sync>, None)
     };
 
     // Create the concurrent processor with all record types and domains
@@ -378,7 +379,7 @@ pub async fn run(args: QueryArgs, config: Config) -> Result<()> {
             domains_vec,
             &mut adaptive_batcher,
             !config.silent,
-        ).await?
+        ).await.map_err(anyhow::Error::from)?
     } else {
         // In-memory processing for smaller lists
         processor.process_stream(domains.into_iter()).await?
@@ -389,12 +390,10 @@ pub async fn run(args: QueryArgs, config: Config) -> Result<()> {
                  metrics.total_domains, all_records.len(), metrics.queries_per_second);
 
         // Show cache statistics if caching was enabled
-        if args.cache {
-            if let Some(cached_client) = client_clone.as_ref().downcast_ref::<CachedDnsClient<DnsxClient>>() {
-                let cache_stats = cached_client.cache_stats();
-                eprintln!("Cache: {} total entries ({} valid, {} expired)",
-                         cache_stats.total_entries, cache_stats.valid_entries, cache_stats.expired_entries);
-            }
+        if let Some(ref cached_client) = cached_client_ref {
+            let cache_stats = cached_client.cache_stats();
+            eprintln!("Cache: {} total entries ({} valid, {} expired)",
+                     cache_stats.total_entries, cache_stats.valid_entries, cache_stats.expired_entries);
         }
 
         // Show Cassandra performance metrics if Cassandra export was enabled
@@ -629,9 +628,9 @@ async fn process_with_adaptive_batching<F>(
     domains: Vec<String>,
     adaptive_batcher: &mut AdaptiveBatchSizer,
     verbose: bool,
-) -> Result<(Vec<DnsRecord>, ProcessingMetrics)>
+) -> rdnsx_core::error::Result<(Vec<DnsRecord>, ProcessingMetrics)>
 where
-    F: Fn(String) -> futures::future::BoxFuture<'static, Result<Vec<DnsRecord>>> + Send + Sync + 'static,
+    F: Fn(String) -> futures::future::BoxFuture<'static, rdnsx_core::error::Result<Vec<DnsRecord>>> + Send + Sync + 'static,
 {
     let mut all_records = Vec::new();
     let mut total_metrics = ProcessingMetrics::default();
@@ -653,12 +652,20 @@ where
         // Create a new processor with the current batch size
         let batch_processor = ConcurrentProcessor::new(
             ConcurrencyConfig {
-                max_concurrent: processor.config.max_concurrent,
+                max_concurrent: processor.config().max_concurrent,
                 batch_size: batch_size.min(1000), // Cap internal batch size
-                timeout: processor.config.timeout,
-                rate_limit: processor.config.rate_limit,
+                timeout: processor.config().timeout,
+                rate_limit: processor.config().rate_limit,
             },
-            processor.query_fn.clone(),
+            {
+                let query_fn = Arc::clone(processor.query_fn());
+                move |domain: String| {
+                    let query_fn = Arc::clone(&query_fn);
+                    Box::pin(async move {
+                        query_fn(domain).await
+                    })
+                }
+            },
         );
 
         let batch_domains = domains[start_idx..end_idx].to_vec();
