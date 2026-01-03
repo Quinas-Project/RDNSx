@@ -164,17 +164,23 @@ rdnsx ptr 8.8.8.0/24
 ```
 
 ### Comprehensive DNS Analysis
-Run all enumeration techniques on a target:
+Run all 11 enumeration techniques on a target for complete reconnaissance:
 
 ```bash
 rdnsx enumerate --technique comprehensive --target example.com
 ```
 
+**Available Techniques:**
+- Zone transfers, DNSSEC analysis, CDN detection
+- Email security (SPF/DMARC/DKIM), IPv6 enumeration
+- Wildcard analysis, ASN enumeration, server fingerprinting
+- And more advanced security research tools
+
 ## Next Steps
 
 Now that you know the basics, explore:
 
-- [DNS Record Types](dns-records) - Learn about all supported record types
+- [DNS Record Types](dns-records) - Complete reference for all 27 supported record types
 - [CLI Reference](../api/cli-reference) - Complete command documentation
 - [Configuration](configuration) - Advanced configuration options
 - [Database Exports](exports) - Export results to databases

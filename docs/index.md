@@ -23,10 +23,10 @@ RDNSx combines the power of modern async programming with battle-tested DNS reso
 ### Key Features
 
 - ⚡ **Blazing Fast**: Async DNS resolution with configurable concurrency
-- 🔍 **Comprehensive Enumeration**: Support for 27+ DNS record types
+- 🔍 **27 DNS Record Types**: Complete support for all major DNS record types
 - 🏢 **ASN Intelligence**: Discover IP ranges and network information for major organizations
-- 🔄 **Reverse DNS**: Concurrent PTR lookups with smart rate limiting
-- 🛡️ **Security Focused**: Advanced DNSSEC analysis and wildcard detection
+- 🔄 **11 Enumeration Techniques**: Comprehensive DNS reconnaissance tools
+- 🛡️ **Security Research**: Advanced DNSSEC analysis, wildcard detection, and zone walking
 - 📊 **Database Integration**: Export results to Elasticsearch, MongoDB, and Cassandra
 - 🐳 **Container Ready**: Docker images for easy deployment
 
@@ -46,7 +46,7 @@ New to RDNSx? Get started in minutes with our comprehensive guides:
 - [Configuration](guide/configuration) - Configuration options
 
 ### DNS Operations
-- [DNS Record Types](guide/dns-records) - Supported record types and usage
+- [DNS Record Types](guide/dns-records) - Complete reference for all 27 supported record types
 - [Querying Domains](guide/querying) - Domain resolution and enumeration
 - [Subdomain Enumeration](guide/bruteforce) - Finding subdomains with wordlists
 - [Reverse DNS](guide/reverse-dns) - IP to hostname lookups

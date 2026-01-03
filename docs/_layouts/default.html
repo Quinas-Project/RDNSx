@@ -16,11 +16,14 @@
   <!-- Canonical URL -->
   <link rel="canonical" href="{{ page.url | absolute_url }}">
 
-  <!-- Favicon -->
+  <!-- Favicon and App Icons -->
   <link rel="icon" type="image/x-icon" href="{{ '/assets/images/favicon.ico' | relative_url }}">
   <link rel="apple-touch-icon" sizes="180x180" href="{{ '/assets/images/apple-touch-icon.png' | relative_url }}">
   <link rel="icon" type="image/png" sizes="32x32" href="{{ '/assets/images/favicon-32x32.png' | relative_url }}">
   <link rel="icon" type="image/png" sizes="16x16" href="{{ '/assets/images/favicon-16x16.png' | relative_url }}">
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="{{ '/manifest.json' | relative_url }}">
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
@@ -158,16 +161,14 @@
   <!-- Jekyll SEO Plugin -->
   {%- seo -%}
 
-  <!-- Stylesheets -->
-  <link rel="stylesheet" href="{{ "/assets/css/style.css?v=" | append: site.github.build_revision | relative_url }}">
+  <!-- Performance Optimizations -->
+  {%- include performance.html -%}
+
+  <!-- Fallback Stylesheet -->
+  <link rel="stylesheet" href="{{ "/assets/css/style.css?v=" | append: site.github.build_revision | relative_url }}" media="print" onload="this.media='all'; this.onload=null;">
 
   <!-- RSS Feed -->
   {%- feed_meta -%}
-
-  <!-- Analytics (if configured) -->
-  {%- if jekyll.environment == 'production' and site.google_analytics -%}
-    {%- include google-analytics.html -%}
-  {%- endif -%}
 </head>
 <body>
   {%- include header.html -%}
@@ -184,6 +185,23 @@
 
   {%- if jekyll.environment == 'production' -%}
     <script src="{{ '/assets/js/scale.fix.js' | relative_url }}"></script>
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.register('{{ "/sw.js" | relative_url }}')
+            .then(function(registration) {
+              console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            }, function(err) {
+              console.log('ServiceWorker registration failed: ', err);
+            });
+        });
+      }
+    </script>
+    <!-- Image Optimization -->
+    {%- include image-optimizer.html -%}
+    <!-- Search Functionality -->
+    {%- include search.html -%}
   {%- endif -%}
 </body>
 </html>

@@ -7,16 +7,51 @@ RDNSx is a Rust rewrite of the popular [DNSx](https://github.com/projectdiscover
 ## Features
 
 - **Fast DNS Resolution**: High-performance DNS queries with async/await concurrency
-- **Comprehensive Record Types**: Support for 27 DNS record types including A, AAAA, CNAME, MX, TXT, NS, SOA, PTR, SRV, CAA, CERT, DNSKEY, DS, HINFO, HTTPS, KEY, LOC, NAPTR, NSEC, NSEC3, OPT, RRSIG, SSHFP, SVCB, TLSA, URI
+- **Comprehensive Record Types**: Support for 27 DNS record types (see table below)
 - **Custom Resolvers**: Support for multiple DNS resolvers with load balancing and failover
 - **Subdomain Enumeration**: Bruteforce subdomains using wordlists
 - **Wildcard Filtering**: Advanced wildcard detection and filtering
 - **ASN Enumeration**: Discover IP ranges and network information for Autonomous Systems (Google, Amazon, Cloudflare, etc.)
 - **Enhanced Reverse DNS**: Concurrent PTR queries for IP ranges and ASN-based lookups with smart rate limiting
-- **Advanced Enumeration**: Zone transfers, DNSSEC analysis, CDN detection, email security analysis, and more
+- **Advanced Enumeration**: 11 specialized enumeration techniques (see table below)
 - **Database Export**: Export results to Elasticsearch, MongoDB, and Cassandra
 - **CLI Interface**: User-friendly command-line interface with comprehensive options
 - **Library API**: Embeddable library for use in other Rust projects
+
+## DNS Record Types
+
+RDNSx supports comprehensive DNS record type querying for thorough network analysis:
+
+| Record Type | Description | Use Case |
+|-------------|-------------|----------|
+| **A** | IPv4 address record | Maps domain to IP address |
+| **AAAA** | IPv6 address record | Maps domain to IPv6 address |
+| **CNAME** | Canonical name record | Domain aliases and redirects |
+| **MX** | Mail exchange record | Email server configuration |
+| **TXT** | Text record | SPF, DKIM, DMARC, and custom data |
+| **NS** | Name server record | Authoritative DNS servers |
+| **SOA** | Start of authority | Zone administrative information |
+| **PTR** | Pointer record | Reverse DNS (IP to hostname) |
+| **SRV** | Service locator record | Service discovery (SIP, XMPP, etc.) |
+| **CAA** | Certification authority authorization | SSL certificate restrictions |
+| **DNSKEY** | DNSSEC public key | DNSSEC key storage |
+| **DS** | Delegation signer | DNSSEC key verification |
+| **RRSIG** | DNSSEC signature | Resource record signatures |
+| **NSEC** | Next secure record | DNSSEC proof of non-existence |
+| **NSEC3** | Hashed next secure record | DNSSEC privacy protection |
+| **HINFO** | Host information | Hardware/software descriptions |
+| **HTTPS** | HTTPS service binding | HTTP/2 and HTTPS configuration |
+| **NAPTR** | Name authority pointer | Dynamic delegation discovery |
+| **SSHFP** | SSH fingerprint | SSH host key verification |
+| **SVCB** | Service binding | Service parameters (HTTPS upgrade) |
+| **TLSA** | TLS certificate association | DANE (DNS-based Authentication) |
+| **URI** | Uniform resource identifier | URI redirects |
+| **AFSDB** | AFS database location | Andrew File System |
+| **CERT** | Certificate record | Public key certificates |
+| **DNAME** | Delegation name | Domain redirection |
+| **KEY** | Key record | Public keys for DNSSEC |
+| **LOC** | Location record | Geographic coordinates |
+| **OPT** | Option record | EDNS extensions |
 
 ## Documentation
 
@@ -138,18 +173,23 @@ Perform complete DNS enumeration on a target:
 rdnsx enumerate --technique comprehensive --target example.com
 ```
 
-#### Available Enumeration Techniques:
-- `zone-transfer` - Attempt DNS zone transfer (AXFR)
-- `email-security` - Enumerate SPF, DMARC, DKIM records
-- `cdn-detection` - Detect CDN usage and configuration
-- `ipv6-enumeration` - Enumerate IPv6 deployment
-- `dnssec-enumeration` - Analyze DNSSEC configuration
-- `dnssec-zone-walking` - Perform DNSSEC zone walking (NSEC enumeration)
-- `wildcard-analysis` - Analyze wildcard DNS configurations
-- `passive-dns` - Perform passive DNS enumeration
-- `server-fingerprint` - Fingerprint DNS server capabilities
-- `asn-enumeration` - Enumerate ASN information and IP ranges
-- `comprehensive` - All enumeration techniques combined
+### Enumeration Techniques
+
+RDNSx provides 11 specialized enumeration techniques for comprehensive DNS reconnaissance:
+
+| Technique | Command | Description |
+|-----------|---------|-------------|
+| **Zone Transfer** | `zone-transfer` | Attempt DNS zone transfer (AXFR) to retrieve all records |
+| **Email Security** | `email-security` | Enumerate SPF, DMARC, DKIM records for email authentication |
+| **CDN Detection** | `cdn-detection` | Detect CDN usage and analyze configuration |
+| **IPv6 Enumeration** | `ipv6-enumeration` | Enumerate IPv6 deployment and addresses |
+| **DNSSEC Analysis** | `dnssec-enumeration` | Analyze DNSSEC configuration and security |
+| **DNSSEC Zone Walking** | `dnssec-zone-walking` | Perform DNSSEC zone walking (NSEC enumeration) |
+| **Wildcard Analysis** | `wildcard-analysis` | Analyze wildcard DNS configurations and bypass techniques |
+| **Passive DNS** | `passive-dns` | Perform passive DNS enumeration using historical data |
+| **Server Fingerprint** | `server-fingerprint` | Fingerprint DNS server capabilities and versions |
+| **ASN Enumeration** | `asn-enumeration` | Enumerate ASN information and associated IP ranges |
+| **Comprehensive** | `comprehensive` | Run all enumeration techniques combined |
 
 ### Enhanced Reverse DNS Lookups
 

@@ -77,6 +77,21 @@ OPTIONS:
         --resp-only                        Response values only
 ```
 
+### Supported DNS Record Types
+
+RDNSx supports comprehensive DNS record type querying:
+
+- **Address Records**: `A` (IPv4), `AAAA` (IPv6)
+- **Name Records**: `CNAME` (alias), `DNAME` (redirection)
+- **Mail Records**: `MX` (mail servers), `TXT` (SPF/DKIM/DMARC)
+- **Server Records**: `NS` (name servers), `SOA` (zone authority)
+- **Service Records**: `SRV` (service discovery), `NAPTR` (dynamic delegation)
+- **Security Records**: `DNSKEY`, `DS`, `RRSIG`, `NSEC`, `NSEC3` (DNSSEC)
+- **Certificate Records**: `CAA` (CA authorization), `TLSA` (DANE), `CERT`
+- **Special Records**: `PTR` (reverse DNS), `LOC` (geolocation), `HINFO` (host info)
+- **Modern Records**: `HTTPS`, `SVCB` (HTTP upgrades), `SSHFP` (SSH keys)
+- **Legacy Records**: `AFSDB`, `KEY`, `OPT` (extensions)
+
 #### Examples
 
 ```bash
@@ -175,6 +190,15 @@ USAGE:
 
 ARGS:
     -t, --technique <TECHNIQUE>    Enumeration technique to use [possible values: zone-transfer, email-security, cdn-detection, ipv6-enumeration, server-fingerprint, dnssec-enumeration, dnssec-zone-walking, wildcard-analysis, passive-dns, asn-enumeration, comprehensive]
+        --asn                              ASN information
+        --zone-transfer                    DNS zone transfer (AXFR)
+        --email-security                  SPF, DMARC, DKIM analysis
+        --cdn-detection                   Content delivery network detection
+        --ipv6-enumeration                IPv6 deployment analysis
+        --dnssec-enumeration              DNSSEC configuration analysis
+        --dnssec-zone-walking             DNSSEC NSEC enumeration
+        --wildcard-analysis               Wildcard DNS analysis
+        --passive-dns                     Historical DNS data enumeration
     -T, --target <TARGET>          Target domain or ASN for enumeration
 
 OPTIONS:
