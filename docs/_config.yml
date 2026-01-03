@@ -1,7 +1,7 @@
 # Site settings
 title: "RDNSx Documentation - Fast DNS Toolkit in Rust"
 description: "Complete documentation for RDNSx, a high-performance DNS toolkit written in Rust. Features ASN enumeration, reverse DNS lookups, subdomain enumeration, and comprehensive DNS analysis tools."
-url: "https://docs.rdnsx.dev"
+url: "https://quinas-project.github.io/RDNSx"
 baseurl: ""
 
 # SEO and Meta
