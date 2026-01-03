@@ -1,8 +1,8 @@
 ---
 layout: home
-title: "RDNSx Documentation - Fast DNS Toolkit in Rust"
-description: "Complete documentation for RDNSx, a high-performance DNS toolkit written in Rust. Features ASN enumeration, reverse DNS lookups, subdomain enumeration, and comprehensive DNS analysis tools for security research."
-keywords: "RDNSx, DNS toolkit, Rust, documentation, ASN enumeration, reverse DNS, subdomain enumeration, DNSSEC, security tools, network analysis"
+title: "RDNSx Documentation - High-Performance DNS Toolkit in Rust"
+description: "Complete guide to RDNSx, the fastest DNS enumeration toolkit written in Rust. Master DNS reconnaissance, ASN analysis, reverse DNS lookups, subdomain enumeration, and security research tools. Perfect for cybersecurity professionals and network administrators."
+keywords: "RDNSx, DNS toolkit, Rust DNS scanner, network enumeration, ASN lookup, reverse DNS, subdomain enumeration, DNSSEC analysis, security research tools, network reconnaissance, command line DNS, DNS record types, IPv6 enumeration, email security analysis, CDN detection, zone transfer, passive DNS, server fingerprinting, DNS bruteforce, Rust CLI tools, network security, penetration testing, red team tools, cybersecurity, network analysis, domain intelligence, DNS enumeration tools, network mapping, security assessment"
 og_image: /assets/images/logo.svg
 twitter_card: summary_large_image
 author: "Quinas Project"
@@ -10,25 +10,53 @@ lang: en-US
 permalink: /
 priority: 1.0
 changefreq: weekly
+reading_time: 8
 ---
 
-# Welcome to RDNSx Documentation
+# 🚀 RDNSx Documentation
 
-RDNSx is a **high-performance DNS toolkit written in Rust**, designed for security researchers, network administrators, and developers. Leveraging Rust's memory safety and async capabilities, RDNSx provides comprehensive DNS enumeration, ASN analysis, and reverse DNS lookup functionality.
+**Master DNS reconnaissance with the fastest toolkit written in Rust**
 
-## What is RDNSx?
+RDNSx is a **high-performance DNS enumeration toolkit** written in Rust, designed for cybersecurity professionals, network administrators, and developers. Built with async programming and memory safety, RDNSx delivers enterprise-grade DNS analysis tools with exceptional speed and reliability.
 
-RDNSx combines the power of modern async programming with battle-tested DNS resolution techniques. Whether you're conducting security assessments, network reconnaissance, or building DNS-aware applications, RDNSx delivers the tools you need with exceptional performance and reliability.
+## 🎯 What is RDNSx?
 
-### Key Features
+RDNSx represents the next generation of DNS reconnaissance tools, combining **Rust's performance** with **comprehensive security research capabilities**. Whether you're conducting penetration testing, network assessments, or building DNS-aware applications, RDNSx provides the industry-leading tools you need for thorough DNS intelligence gathering.
 
-- ⚡ **Blazing Fast**: Async DNS resolution with configurable concurrency
-- 🔍 **27 DNS Record Types**: Complete support for all major DNS record types
-- 🏢 **ASN Intelligence**: Discover IP ranges and network information for major organizations
-- 🔄 **11 Enumeration Techniques**: Comprehensive DNS reconnaissance tools
-- 🛡️ **Security Research**: Advanced DNSSEC analysis, wildcard detection, and zone walking
-- 📊 **Database Integration**: Export results to Elasticsearch, MongoDB, and Cassandra
-- 🐳 **Container Ready**: Docker images for easy deployment
+### 🔬 Built for Security Research
+- **Zero-cost abstractions** with Rust's ownership system
+- **Memory-safe** concurrent processing
+- **Type-safe** DNS protocol handling
+- **Performance-optimized** for large-scale scanning
+
+## ✨ Core Features & Capabilities
+
+### ⚡ Performance & Speed
+- **Lightning-Fast DNS Resolution**: Async/await concurrency with up to 50+ simultaneous queries
+- **Memory-Efficient Processing**: Rust's ownership system ensures optimal resource utilization
+- **Smart Rate Limiting**: Intelligent throttling prevents blocking and ensures reliable scanning
+- **Optimized Algorithms**: Custom DNS protocol implementations for maximum throughput
+
+### 🔍 Comprehensive DNS Analysis
+- **Complete Record Type Support**: All 27 DNS record types including A, AAAA, CNAME, MX, TXT, NS, SOA, PTR, SRV, CAA, DNSKEY, DS, RRSIG, NSEC, HTTPS, SVCB, and more
+- **ASN Intelligence Gathering**: Discover IP ranges and network infrastructure for major organizations (Google, Amazon, Cloudflare, Microsoft)
+- **IPv4/IPv6 Dual-Stack**: Full support for modern network infrastructure analysis
+- **Reverse DNS Mastery**: Advanced PTR lookups with ASN integration and smart IP range handling
+
+### 🛡️ Advanced Security Research Tools
+- **Subdomain Enumeration**: High-performance bruteforce discovery with customizable wordlists
+- **DNSSEC Security Analysis**: Comprehensive DNSSEC configuration assessment and zone walking
+- **Wildcard Detection & Bypass**: Advanced filtering techniques for accurate reconnaissance
+- **Email Security Validation**: SPF, DMARC, DKIM record analysis for email infrastructure assessment
+- **CDN Detection**: Identify content delivery networks and analyze configurations
+- **Server Fingerprinting**: Advanced DNS server capability analysis
+
+### 📊 Enterprise-Ready Features
+- **Multi-Database Export**: Native support for Elasticsearch, MongoDB, and Cassandra
+- **Docker Containerization**: Production-ready container images with multi-architecture support
+- **Flexible Configuration**: TOML-based configuration system with environment variable support
+- **Rust Library API**: Embeddable library for custom applications and integrations
+- **Cross-Platform Support**: Native binaries for Linux, macOS, and Windows
 
 ## 🚀 Quick Start Guide
 

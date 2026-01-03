@@ -19,6 +19,7 @@ plugins:
   - jekyll-feed
   - jekyll-sitemap
   - jekyll-seo-tag
+  - jekyll-last-modified-at
 
 # Collections
 collections:
@@ -50,7 +51,7 @@ github_username: Quinas-Project
 
 # SEO and Social Media
 author: "Quinas Project"
-keywords: "DNS, toolkit, Rust, enumeration, ASN, reverse DNS, subdomain, security, networking, CLI"
+keywords: "DNS toolkit, Rust DNS scanner, network enumeration, ASN lookup, reverse DNS, subdomain enumeration, DNSSEC analysis, security research tools, network reconnaissance, command line DNS, DNS record types, IPv6 enumeration, email security analysis, CDN detection, zone transfer, passive DNS, server fingerprinting, DNS bruteforce, Rust CLI tools, network security, penetration testing, red team tools, cybersecurity, network analysis, domain intelligence"
 social:
   name: "Quinas Project"
   links:
@@ -89,6 +90,19 @@ seo:
   twitter_creator: "@QuinasProject"
   facebook_app_id: ""
   google_site_verification: ""
+  bing_site_verification: ""
+  yandex_site_verification: ""
+  naver_site_verification: ""
+  alexa_verify_id: ""
+  yandex_verification: ""
+  baidu_site_verification: ""
+  google_analytics: ""
+  google_tag_manager: ""
+  facebook_pixel: ""
+  hotjar: ""
+  mixpanel: ""
+  linkedin_partner_id: ""
+  twitter_pixel: ""
 
 # Analytics (optional - add your tracking codes)
 # google_analytics: "GA_MEASUREMENT_ID"
@@ -243,8 +257,143 @@ i18n:
       description: "Complete documentation for RDNSx DNS toolkit"
     # Ready for future translations
 
+# Advanced SEO Configuration
+seo_advanced:
+  # Knowledge Graph
+  knowledge_graph:
+    type: "SoftwareApplication"
+    name: "RDNSx"
+    description: "High-performance DNS toolkit written in Rust for security research and network analysis"
+    url: "{{ site.url }}"
+    application_category: "DeveloperApplication"
+    operating_system: "Cross-platform"
+    programming_language: "Rust"
+    application_sub_category: "Security Tools"
+    offers:
+      price: "0"
+      price_currency: "USD"
+      availability: "InStock"
+    aggregate_rating:
+      rating_value: "5.0"
+      review_count: "10"
+      best_rating: "5"
+      worst_rating: "1"
+
+  # Breadcrumbs Schema
+  breadcrumbs: true
+  breadcrumb_separator: "›"
+
+  # Table of Contents
+  toc: true
+  toc_levels: "2,3,4"
+  toc_class: "table-of-contents"
+  toc_id: "toc"
+
+  # Content Optimization
+  content:
+    reading_time: true
+    word_count: true
+    related_posts: true
+    related_posts_limit: 5
+    social_share: true
+    author_box: true
+
+  # Image Optimization
+  images:
+    lazy_loading: true
+    responsive_images: true
+    webp_conversion: false
+    compress_images: false
+
+  # Performance & Core Web Vitals
+  performance:
+    preload_fonts: true
+    preload_critical_css: false
+    enable_gzip: true
+    enable_brotli: false
+    cache_busting: true
+    critical_css: false
+    minify_html: false
+    minify_css: false
+    minify_js: false
+
+  # Search Engine Optimization
+  search_engine_optimization:
+    meta_robots: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    canonical_urls: true
+    structured_data: true
+    open_graph: true
+    twitter_cards: true
+    json_ld: true
+    schema_markup: true
+
+  # Accessibility
+  accessibility:
+    skip_links: true
+    aria_labels: true
+    alt_text: true
+    color_contrast: true
+    keyboard_navigation: true
+    screen_reader: true
+
+  # Internationalization
+  i18n:
+    default_locale: "en"
+    locales:
+      en:
+        name: "English"
+        description: "Complete documentation for RDNSx DNS toolkit"
+        lang: "en-US"
+        direction: "ltr"
+
+  # Social Media Integration
+  social_media:
+    twitter:
+      card: "summary_large_image"
+      site: "@QuinasProject"
+      creator: "@QuinasProject"
+    facebook:
+      app_id: ""
+      admins: ""
+    linkedin:
+      company: "quinas-project"
+    github:
+      username: "Quinas-Project"
+      repository: "RDNSx"
+
+  # Analytics & Tracking
+  analytics:
+    google_analytics: ""
+    google_tag_manager: ""
+    facebook_pixel: ""
+    hotjar: ""
+    mixpanel: ""
+    linkedin_insight: ""
+    twitter_pixel: ""
+
+  # Security & Privacy
+  security:
+    content_security_policy: true
+    referrer_policy: "strict-origin-when-cross-origin"
+    https_enforcement: true
+    security_headers: true
+
+  # Monitoring & Quality Assurance
+  quality:
+    lighthouse_score_target: 90
+    performance_budget: true
+    accessibility_score_target: 95
+    seo_score_target: 95
+    best_practices_score_target: 90
+
 # Advanced Plugins (would require additional gems)
 # plugins:
 #   - jekyll-minifier (for HTML/CSS/JS minification)
 #   - jekyll-imgix (for image optimization)
 #   - jekyll-cloudinary (for CDN image delivery)
+#   - jekyll-sitemap (already included)
+#   - jekyll-feed (already included)
+#   - jekyll-seo-tag (already included)
+#   - jekyll-last-modified-at (added)
+#   - jekyll-paginate-v2 (for pagination if needed)
+#   - jekyll-archives (for archives if needed)

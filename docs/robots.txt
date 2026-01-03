@@ -131,5 +131,32 @@ Allow: /sitemap.xml
 # Sitemap locations
 Sitemap: https://rdnsx.quinas.cloud/sitemap.xml
 
+# Additional sitemaps for better crawling
+Sitemap: https://rdnsx.quinas.cloud/feed.xml
+
 # Host directive (for multi-domain sites)
 Host: https://rdnsx.quinas.cloud
+
+# Crawl delay for different bot types (seconds)
+Crawl-delay: 1
+
+# Allow access to important resources
+Allow: /assets/
+Allow: /feed.xml
+Allow: /sitemap.xml
+Allow: /guide/
+Allow: /api/
+
+# Disallow development and temporary files
+Disallow: /.bundle/
+Disallow: /.sass-cache/
+Disallow: /.jekyll-cache/
+Disallow: /vendor/
+Disallow: /admin/
+Disallow: /_site/
+Disallow: /*.json$
+Disallow: /*.md$
+Disallow: /*.yml$
+Disallow: /*.yaml$
+Disallow: /.git/
+Disallow: /.github/
