@@ -14,49 +14,148 @@ reading_time: 8
 ---
 
 # 🚀 RDNSx Documentation
+## <span itemprop="name">High-Performance DNS Toolkit in Rust</span>
 
-**Master DNS reconnaissance with the fastest toolkit written in Rust**
+<div itemscope itemtype="https://schema.org/SoftwareApplication">
+  <meta itemprop="name" content="RDNSx" />
+  <meta itemprop="description" content="Fast DNS enumeration toolkit for security research and network analysis" />
+  <meta itemprop="operatingSystem" content="Cross-platform" />
+  <meta itemprop="programmingLanguage" content="Rust" />
+  <meta itemprop="applicationCategory" content="DeveloperApplication" />
+  <meta itemprop="offers" content="Free" />
+  <meta itemprop="aggregateRating" content="5.0" />
+</div>
 
-RDNSx is a **high-performance DNS enumeration toolkit** written in Rust, designed for cybersecurity professionals, network administrators, and developers. Built with async programming and memory safety, RDNSx delivers enterprise-grade DNS analysis tools with exceptional speed and reliability.
+**Master DNS reconnaissance with the fastest toolkit written in Rust for cybersecurity and network analysis**
 
-## 🎯 What is RDNSx?
+RDNSx is a **high-performance DNS enumeration toolkit** written in Rust, designed for cybersecurity professionals, network administrators, and developers. Built with async programming and memory safety, RDNSx delivers enterprise-grade DNS analysis tools with exceptional speed and reliability for security research, penetration testing, and network reconnaissance.
 
-RDNSx represents the next generation of DNS reconnaissance tools, combining **Rust's performance** with **comprehensive security research capabilities**. Whether you're conducting penetration testing, network assessments, or building DNS-aware applications, RDNSx provides the industry-leading tools you need for thorough DNS intelligence gathering.
+## 🎯 What is RDNSx? The Ultimate DNS Analysis Platform
 
-### 🔬 Built for Security Research
-- **Zero-cost abstractions** with Rust's ownership system
-- **Memory-safe** concurrent processing
-- **Type-safe** DNS protocol handling
-- **Performance-optimized** for large-scale scanning
+<article itemscope itemtype="https://schema.org/TechArticle">
+  <meta itemprop="headline" content="RDNSx: Next-Generation DNS Enumeration Toolkit" />
+  <meta itemprop="author" content="Quinas Project" />
+  <meta itemprop="datePublished" content="2024-01-01" />
+
+RDNSx represents the next generation of DNS reconnaissance tools, combining **Rust's performance advantages** with **comprehensive security research capabilities**. Whether you're conducting penetration testing, network assessments, performing security audits, or building DNS-aware applications, RDNSx provides the industry-leading tools you need for thorough DNS intelligence gathering and network mapping.
+
+### 🔬 Engineered for Enterprise Security Research
+<section>
+  <h4>Advanced DNS Security Analysis</h4>
+  <ul>
+    <li><strong>Zero-cost abstractions</strong> with Rust's ownership system for maximum performance</li>
+    <li><strong>Memory-safe concurrent processing</strong> handling up to 50+ simultaneous DNS queries</li>
+    <li><strong>Type-safe DNS protocol handling</strong> preventing common enumeration errors</li>
+    <li><strong>Performance-optimized algorithms</strong> for large-scale network scanning and reconnaissance</li>
+  </ul>
+</section>
 
 ## ✨ Core Features & Capabilities
 
-### ⚡ Performance & Speed
-- **Lightning-Fast DNS Resolution**: Async/await concurrency with up to 50+ simultaneous queries
-- **Memory-Efficient Processing**: Rust's ownership system ensures optimal resource utilization
-- **Smart Rate Limiting**: Intelligent throttling prevents blocking and ensures reliable scanning
-- **Optimized Algorithms**: Custom DNS protocol implementations for maximum throughput
+<section itemscope itemtype="https://schema.org/ItemList">
+  <meta itemprop="name" content="RDNSx Key Features" />
+  <meta itemprop="description" content="Comprehensive DNS enumeration and security research capabilities" />
 
-### 🔍 Comprehensive DNS Analysis
-- **Complete Record Type Support**: All 27 DNS record types including A, AAAA, CNAME, MX, TXT, NS, SOA, PTR, SRV, CAA, DNSKEY, DS, RRSIG, NSEC, HTTPS, SVCB, and more
-- **ASN Intelligence Gathering**: Discover IP ranges and network infrastructure for major organizations (Google, Amazon, Cloudflare, Microsoft)
-- **IPv4/IPv6 Dual-Stack**: Full support for modern network infrastructure analysis
-- **Reverse DNS Mastery**: Advanced PTR lookups with ASN integration and smart IP range handling
+### ⚡ Performance & Speed Optimization
+<div itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+  <meta itemprop="position" content="1" />
+  <strong>Lightning-Fast DNS Resolution</strong>: Async/await concurrency engine supporting up to 50+ simultaneous DNS queries for maximum throughput and minimal latency in network reconnaissance operations.
+</div>
+
+<div itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+  <meta itemprop="position" content="2" />
+  <strong>Memory-Efficient Processing</strong>: Rust's ownership system and borrow checker ensure optimal resource utilization without memory leaks or performance degradation during extended scanning sessions.
+</div>
+
+<div itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+  <meta itemprop="position" content="3" />
+  <strong>Smart Rate Limiting</strong>: Intelligent throttling algorithms prevent DNS server blocking while maintaining reliable scanning performance for large-scale network assessments.
+</div>
+
+<div itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+  <meta itemprop="position" content="4" />
+  <strong>Optimized Algorithms</strong>: Custom DNS protocol implementations with hand-tuned performance optimizations for enterprise-grade security testing and research applications.
+</div>
+
+### 🔍 Comprehensive DNS Analysis Suite
+<div itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+  <meta itemprop="position" content="5" />
+  <strong>Complete Record Type Support</strong>: Full coverage of all 27 DNS record types including A, AAAA, CNAME, MX, TXT, NS, SOA, PTR, SRV, CAA, DNSKEY, DS, RRSIG, NSEC, HTTPS, SVCB, and specialized records for thorough network mapping.
+</div>
+
+<div itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+  <meta itemprop="position" content="6" />
+  <strong>ASN Intelligence Gathering</strong>: Advanced Autonomous System Number enumeration to discover IP ranges and network infrastructure for major organizations including Google, Amazon, Cloudflare, Microsoft, and other cloud providers.
+</div>
+
+<div itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+  <meta itemprop="position" content="7" />
+  <strong>IPv4/IPv6 Dual-Stack Support</strong>: Complete dual-stack DNS resolution capabilities for modern network infrastructure analysis and IPv6 migration assessments.
+</div>
+
+<div itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+  <meta itemprop="position" content="8" />
+  <strong>Reverse DNS Mastery</strong>: Advanced PTR record lookups with ASN integration and intelligent IP range handling for comprehensive reverse DNS reconnaissance.
+</div>
 
 ### 🛡️ Advanced Security Research Tools
-- **Subdomain Enumeration**: High-performance bruteforce discovery with customizable wordlists
-- **DNSSEC Security Analysis**: Comprehensive DNSSEC configuration assessment and zone walking
-- **Wildcard Detection & Bypass**: Advanced filtering techniques for accurate reconnaissance
-- **Email Security Validation**: SPF, DMARC, DKIM record analysis for email infrastructure assessment
-- **CDN Detection**: Identify content delivery networks and analyze configurations
-- **Server Fingerprinting**: Advanced DNS server capability analysis
+<div itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+  <meta itemprop="position" content="9" />
+  <strong>Subdomain Enumeration Engine</strong>: High-performance brute-force subdomain discovery with customizable wordlists, recursive enumeration, and advanced filtering for comprehensive domain reconnaissance.
+</div>
 
-### 📊 Enterprise-Ready Features
-- **Multi-Database Export**: Native support for Elasticsearch, MongoDB, and Cassandra
-- **Docker Containerization**: Production-ready container images with multi-architecture support
-- **Flexible Configuration**: TOML-based configuration system with environment variable support
-- **Rust Library API**: Embeddable library for custom applications and integrations
-- **Cross-Platform Support**: Native binaries for Linux, macOS, and Windows
+<div itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+  <meta itemprop="position" content="10" />
+  <strong>DNSSEC Security Analysis</strong>: Comprehensive DNS Security Extensions evaluation including key validation, signature verification, and zone walking capabilities for security auditing.
+</div>
+
+<div itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+  <meta itemprop="position" content="11" />
+  <strong>Wildcard Detection & Bypass</strong>: Advanced wildcard DNS configuration analysis with intelligent bypass techniques for accurate vulnerability assessment and reconnaissance.
+</div>
+
+<div itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+  <meta itemprop="position" content="12" />
+  <strong>Email Security Validation</strong>: Complete email infrastructure analysis including SPF, DMARC, DKIM record validation and comprehensive security assessment reporting.
+</div>
+
+<div itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+  <meta itemprop="position" content="13" />
+  <strong>CDN Detection & Analysis</strong>: Automated content delivery network identification and configuration analysis for infrastructure mapping and security research.
+</div>
+
+<div itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+  <meta itemprop="position" content="14" />
+  <strong>Server Fingerprinting</strong>: Advanced DNS server capability analysis and version detection for network infrastructure intelligence and security assessment.
+</div>
+
+### 📊 Enterprise-Ready Integration Features
+<div itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+  <meta itemprop="position" content="15" />
+  <strong>Multi-Database Export</strong>: Native integration with Elasticsearch, MongoDB, and Cassandra for large-scale data storage and SIEM system integration in enterprise environments.
+</div>
+
+<div itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+  <meta itemprop="position" content="16" />
+  <strong>Docker Containerization</strong>: Production-ready container images with multi-architecture support for seamless deployment in containerized environments and CI/CD pipelines.
+</div>
+
+<div itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+  <meta itemprop="position" content="17" />
+  <strong>Flexible Configuration Management</strong>: TOML-based configuration system with environment variable support and advanced performance tuning options for enterprise deployments.
+</div>
+
+<div itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+  <meta itemprop="position" content="18" />
+  <strong>Rust Library API</strong>: Embeddable Rust library interface for seamless integration into custom applications, security tools, and automated workflows.
+</div>
+
+<div itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+  <meta itemprop="position" content="19" />
+  <strong>Cross-Platform Compatibility</strong>: Native binary distributions for Linux, macOS, and Windows with consistent performance and feature parity across all supported platforms.
+</div>
+
+</section>
 
 ## 🚀 Quick Start Guide
 
@@ -66,28 +165,46 @@ New to RDNSx? Get started in minutes with our comprehensive guides:
 - **[⚡ Quick Start Tutorial](guide/quick-start)** - Learn basic DNS queries, ASN enumeration, and advanced techniques
 - **[📖 CLI Reference](api/cli-reference)** - Complete command documentation with examples
 
-## 📚 Guides
+## 📚 Comprehensive Guides & Documentation
 
-### Getting Started
-- [Installation](guide/installation) - How to install RDNSx
-- [Quick Start](guide/quick-start) - Basic usage examples
-- [Configuration](guide/configuration) - Configuration options
+### 🚀 Getting Started with RDNSx
+- [**Installation Guide**](guide/installation) - Complete setup instructions for Windows, Linux, macOS, and Docker environments
+- [**Quick Start Tutorial**](guide/quick-start) - Learn DNS enumeration, ASN lookups, reverse DNS, and subdomain discovery
+- [**Configuration Guide**](guide/configuration) - Advanced TOML configuration, custom resolvers, and performance tuning
 
-### DNS Operations
-- [DNS Record Types](guide/dns-records) - Complete reference for all 27 supported record types
-- [Querying Domains](guide/querying) - Domain resolution and enumeration
-- [Subdomain Enumeration](guide/bruteforce) - Finding subdomains with wordlists
-- [Reverse DNS](guide/reverse-dns) - IP to hostname lookups
+### 🔍 DNS Analysis & Enumeration
+- [**DNS Record Types Reference**](guide/dns-records) - Complete guide to all 27 supported DNS record types
+- [**Domain Querying**](guide/querying) - Advanced domain resolution and analysis techniques
+- [**Subdomain Enumeration**](guide/bruteforce) - Discover subdomains using wordlists and advanced methods
+- [**Reverse DNS Lookups**](guide/reverse-dns) - IP-to-hostname resolution with ASN integration
 
-### Advanced Features
-- [Wildcard Filtering](guide/wildcard-filtering) - Handling wildcard DNS responses
-- [Database Exports](guide/exports) - Exporting results to databases
-- [Custom Resolvers](guide/resolvers) - Using custom DNS servers
+### 🛡️ Security Research Tools
+- [**DNSSEC Analysis**](guide/dnssec) - Comprehensive DNS security extension evaluation
+- [**Email Security Auditing**](guide/email-security) - SPF, DMARC, DKIM validation and analysis
+- [**CDN Detection**](guide/cdn-detection) - Identify and analyze content delivery networks
+- [**Wildcard DNS Handling**](guide/wildcard-filtering) - Advanced wildcard detection and bypass techniques
 
-## 🔧 API Reference
+### 📊 Enterprise Features
+- [**Database Integration**](guide/exports) - Export results to Elasticsearch, MongoDB, and Cassandra
+- [**Custom DNS Resolvers**](guide/resolvers) - Configure custom DNS servers and failover
+- [**Performance Optimization**](guide/performance) - Maximize scanning speed and efficiency
 
-- [CLI Reference](api/cli-reference) - Complete command-line interface documentation
-- [Library API](api/library) - Using RDNSx as a Rust library
+## 🔧 Developer Resources
+
+### API Documentation
+- [**CLI Reference**](api/cli-reference) - Complete command-line interface documentation with examples
+- [**Rust Library API**](api/library) - Integrate RDNSx into your Rust applications
+- [**REST API**](api/rest) - HTTP API for web applications and integrations
+
+### Community & Support
+- [**Frequently Asked Questions**](faq) - Common questions and troubleshooting guide
+- [**Contributing Guide**](https://github.com/Quinas-Project/RDNSx/blob/main/CONTRIBUTING.md) - How to contribute to RDNSx
+- [**Issue Tracker**](https://github.com/Quinas-Project/RDNSx/issues) - Report bugs and request features
+
+<!-- Newsletter Signup Section -->
+<section class="newsletter-section">
+  {%- include newsletter-signup.html -%}
+</section>
 
 ## 📖 Usage Examples
 
