@@ -164,9 +164,9 @@ performance:
   preload_fonts: false
   preload_critical_css: false
 
-# Progressive Web App (PWA)
+# Progressive Web App (PWA) - Disabled until assets are deployed
 pwa:
-  enabled: true
+  enabled: false
   name: "RDNSx Documentation"
   short_name: "RDNSx Docs"
   description: "Complete documentation for RDNSx DNS toolkit"
@@ -191,7 +191,7 @@ seo_advanced:
     type: "SoftwareApplication"
     name: "RDNSx"
     description: "Fast DNS toolkit in Rust"
-    url: "https://docs.rdnsx.dev"
+    url: "{{ site.url }}"
     application_category: "DeveloperApplication"
     operating_system: "Cross-platform"
     programming_language: "Rust"
@@ -200,7 +200,7 @@ seo_advanced:
   organization:
     name: "Quinas Project"
     url: "https://github.com/Quinas-Project"
-    logo: "https://docs.rdnsx.dev/assets/images/logo.svg"
+    logo: "{{ site.url }}/assets/images/logo.svg"
     same_as:
       - "https://github.com/Quinas-Project"
       - "https://twitter.com/QuinasProject"

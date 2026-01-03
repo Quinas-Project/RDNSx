@@ -22,8 +22,8 @@
   <link rel="icon" type="image/png" sizes="32x32" href="{{ '/assets/images/favicon-32x32.png' | relative_url }}">
   <link rel="icon" type="image/png" sizes="16x16" href="{{ '/assets/images/favicon-16x16.png' | relative_url }}">
 
-  <!-- PWA Manifest -->
-  <link rel="manifest" href="{{ '/manifest.json' | relative_url }}">
+  <!-- PWA Manifest - Uncomment when manifest.json is deployed -->
+  <!-- <link rel="manifest" href="{{ '/manifest.json' | absolute_url }}"> -->
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
@@ -165,7 +165,7 @@
   {%- include performance.html -%}
 
   <!-- Fallback Stylesheet -->
-  <link rel="stylesheet" href="{{ "/assets/css/style.css?v=" | append: site.github.build_revision | relative_url }}" media="print" onload="this.media='all'; this.onload=null;">
+  <!-- Theme CSS is loaded automatically by GitHub Pages -->
 
   <!-- RSS Feed -->
   {%- feed_meta -%}
@@ -184,12 +184,12 @@
   {%- include footer.html -%}
 
   {%- if jekyll.environment == 'production' -%}
-    <script src="{{ '/assets/js/scale.fix.js' | relative_url }}"></script>
-    <!-- Service Worker Registration -->
+    <!-- Service Worker Registration - Uncomment when sw.js is deployed -->
+    <!--
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
-          navigator.serviceWorker.register('{{ "/sw.js" | relative_url }}')
+          navigator.serviceWorker.register('{{ "/sw.js" | absolute_url }}')
             .then(function(registration) {
               console.log('ServiceWorker registration successful with scope: ', registration.scope);
             }, function(err) {
@@ -198,6 +198,7 @@
         });
       }
     </script>
+    -->
     <!-- Image Optimization -->
     {%- include image-optimizer.html -%}
     <!-- Search Functionality -->
