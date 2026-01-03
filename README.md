@@ -11,7 +11,7 @@
 
 *High-performance DNS enumeration, reconnaissance, and analysis toolkit for security researchers and network administrators*
 
-[📖 Documentation](https://quinas-project.github.io/RDNSx/) • [🚀 Quick Start](https://quinas-project.github.io/RDNSx/guide/quick-start) • [🐛 Report Issues](https://github.com/Quinas-Project/RDNSx/issues)
+[📖 Documentation](https://rdnsx.quinas.cloud/) • [🚀 Quick Start](https://rdnsx.quinas.cloud/guide/quick-start) • [🐛 Report Issues](https://github.com/Quinas-Project/RDNSx/issues)
 
 </div>
 
@@ -98,14 +98,14 @@ RDNSx supports comprehensive DNS record type querying for thorough network analy
 
 ## 📚 Documentation
 
-Complete documentation is available at **[https://quinas-project.github.io/RDNSx/](https://quinas-project.github.io/RDNSx/)**
+Complete documentation is available at **[https://rdnsx.quinas.cloud/](https://rdnsx.quinas.cloud/)**
 
 ### Quick Links
-- [📦 Installation Guide](https://quinas-project.github.io/RDNSx/guide/installation)
-- [🚀 Quick Start Tutorial](https://quinas-project.github.io/RDNSx/guide/quick-start)
-- [📖 CLI Reference](https://quinas-project.github.io/RDNSx/api/cli-reference)
-- [🔍 DNS Record Types](https://quinas-project.github.io/RDNSx/guide/dns-records)
-- [⚙️ Configuration Guide](https://quinas-project.github.io/RDNSx/guide/configuration)
+- [📦 Installation Guide](https://rdnsx.quinas.cloud/guide/installation)
+- [🚀 Quick Start Tutorial](https://rdnsx.quinas.cloud/guide/quick-start)
+- [📖 CLI Reference](https://rdnsx.quinas.cloud/api/cli-reference)
+- [🔍 DNS Record Types](https://rdnsx.quinas.cloud/guide/dns-records)
+- [⚙️ Configuration Guide](https://rdnsx.quinas.cloud/guide/configuration)
 
 ## 📋 Prerequisites
 

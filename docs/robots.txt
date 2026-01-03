@@ -1,5 +1,5 @@
 # Robots.txt for RDNSx Documentation
-# https://docs.rdnsx.dev/robots.txt
+# https://rdnsx.quinas.cloud/robots.txt
 
 # Default policy - Allow all crawlers
 User-agent: *
@@ -129,7 +129,7 @@ Allow: /feed.xml
 Allow: /sitemap.xml
 
 # Sitemap locations
-Sitemap: https://docs.rdnsx.dev/sitemap.xml
+Sitemap: https://rdnsx.quinas.cloud/sitemap.xml
 
 # Host directive (for multi-domain sites)
-Host: https://docs.rdnsx.dev
+Host: https://rdnsx.quinas.cloud

@@ -1,5 +1,5 @@
 // Service Worker for RDNSx Documentation PWA
-// https://docs.rdnsx.dev/sw.js
+// https://rdnsx.quinas.cloud/sw.js
 
 const CACHE_NAME = 'rdnsx-docs-v1.0.0';
 const STATIC_CACHE = 'rdnsx-static-v1.0.0';
