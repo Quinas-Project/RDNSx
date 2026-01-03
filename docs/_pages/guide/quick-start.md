@@ -1,8 +1,15 @@
 ---
 layout: page
-title: Quick Start
-description: "Get started with RDNSx in minutes"
+title: "RDNSx Quick Start Guide"
+description: "Get started with RDNSx DNS toolkit in minutes. Learn basic DNS queries, ASN enumeration, and advanced enumeration techniques."
+keywords: "RDNSx quick start, DNS queries, ASN enumeration, reverse DNS, getting started, tutorial"
+og_image: /assets/images/logo.svg
+twitter_card: summary_large_image
+author: "Quinas Project"
+lang: en-US
 permalink: /guide/quick-start/
+priority: 0.9
+changefreq: monthly
 ---
 
 # Quick Start

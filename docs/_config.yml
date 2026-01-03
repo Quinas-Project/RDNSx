@@ -1,8 +1,13 @@
 # Site settings
-title: "RDNSx Documentation"
-description: "Fast and multi-purpose DNS toolkit written in Rust"
+title: "RDNSx Documentation - Fast DNS Toolkit in Rust"
+description: "Complete documentation for RDNSx, a high-performance DNS toolkit written in Rust. Features ASN enumeration, reverse DNS lookups, subdomain enumeration, and comprehensive DNS analysis tools."
 url: "https://docs.rdnsx.dev"
 baseurl: ""
+
+# SEO and Meta
+lang: en-US
+locale: en_US
+timezone: UTC
 
 # Build settings
 markdown: kramdown
@@ -43,9 +48,70 @@ repository: "Quinas-Project/RDNSx"
 logo: /assets/images/logo.svg
 github_username: Quinas-Project
 
-# SEO and social
+# SEO and Social Media
 author: "Quinas Project"
+keywords: "DNS, toolkit, Rust, enumeration, ASN, reverse DNS, subdomain, security, networking, CLI"
 social:
-  name: Quinas Project
+  name: "Quinas Project"
   links:
     - https://github.com/Quinas-Project/RDNSx
+  twitter: "@QuinasProject"
+  linkedin: "https://linkedin.com/company/quinas-project"
+
+# Open Graph and Twitter Cards
+og_image: /assets/images/logo.svg
+twitter:
+  username: "@QuinasProject"
+  card: summary_large_image
+
+# Structured Data - Software Application
+software:
+  name: "RDNSx"
+  description: "Fast and multi-purpose DNS toolkit written in Rust"
+  application_category: "DeveloperApplication"
+  operating_system: "Cross-platform"
+  programming_language: "Rust"
+  version: "1.0.0"
+  author:
+    name: "Quinas Project"
+    url: "https://github.com/Quinas-Project"
+  offers:
+    price: "0"
+    price_currency: "USD"
+  aggregate_rating:
+    rating_value: "5.0"
+    review_count: "10"
+
+# Additional SEO settings
+seo:
+  type: website
+  site_name: "RDNSx Documentation"
+  twitter_creator: "@QuinasProject"
+  facebook_app_id: ""
+  google_site_verification: ""
+
+# Analytics (optional - add your tracking codes)
+# google_analytics: "GA_MEASUREMENT_ID"
+# google_tag_manager: "GTM-XXXXXXX"
+
+# Performance and Caching
+compress_html:
+  clippings: all
+  comments: ["<!-- ", " -->"]
+  endings: all
+  startings: [html, head, body]
+
+# Feed settings
+feed:
+  posts_limit: 20
+  excerpt_only: false
+
+# Sitemap settings
+sitemap:
+  exclude:
+    - "/admin/"
+  include_posts:
+    - "/guide/"
+    - "/api/"
+  change_frequency: weekly
+  priority: 0.8

@@ -1,8 +1,15 @@
 ---
 layout: page
-title: Installation Guide
-description: "How to install RDNSx on your system"
+title: "RDNSx Installation Guide - Setup Instructions"
+description: "Complete installation guide for RDNSx DNS toolkit. Install on Windows, Linux, macOS, or using Docker. Includes Rust setup and troubleshooting."
+keywords: "RDNSx installation, setup guide, Rust installation, Docker setup, Windows install, Linux install, macOS install"
+og_image: /assets/images/logo.svg
+twitter_card: summary_large_image
+author: "Quinas Project"
+lang: en-US
 permalink: /guide/installation/
+priority: 0.9
+changefreq: monthly
 ---
 
 # Installation Guide

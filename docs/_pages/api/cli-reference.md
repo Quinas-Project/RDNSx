@@ -1,8 +1,15 @@
 ---
 layout: page
-title: CLI Reference
-description: "Complete command-line interface reference for RDNSx"
+title: "RDNSx CLI Reference - Command Documentation"
+description: "Complete command-line interface reference for RDNSx DNS toolkit. All commands, options, and usage examples for DNS enumeration, ASN lookup, and reverse DNS operations."
+keywords: "RDNSx CLI, command reference, DNS commands, ASN enumeration, reverse DNS, command line interface, documentation"
+og_image: /assets/images/logo.svg
+twitter_card: summary_large_image
+author: "Quinas Project"
+lang: en-US
 permalink: /api/cli-reference/
+priority: 0.8
+changefreq: monthly
 ---
 
 # CLI Reference
